@@ -1,0 +1,18 @@
+-*- coding: utf-8 -*-
+Package: magest
+Title: Estimación encuestas MAG
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Eddy",
+           family = "Castellón",
+           role = c("aut", "cre"),
+           email = "eddy.castellon@mag.gob.ni",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Funciones para procesar datos, validar, y hacer
+estimaciones encuestas MAG
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.0
