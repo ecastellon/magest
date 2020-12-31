@@ -543,102 +543,202 @@ read_xcl <- function(x, file, xv7 = TRUE) {
 #'     de «XLConnect» y los requerimientos del sistema con
 #'     \code{packageDescription("XLConnect")}.
 #' @param x data.frame
-#' @param hoja character: hoja o pestaña del archivo excel
-#' @param cref character: referencia a celda excel.
 #' @param file character: nombre del archivo
+#' @param hoja nombre (character) o número (numeric) de la hoja o
+#'     pestaña que recibirá los datos
+#' @param rfc character: referencia a celda excel.
 #' @param col integer: número de la columna; igual a 1 por omisión
 #' @param fila integer: número de la fila; igual a 1 por omisión
 #' @param free logical: liberar memoria (TRUE); FALSE por omisión
-#' @return
+#' @return logical
 #' @seealso save_xcl
 #' @export
-save_cel_xcl <- function(x, hoja = character(), cref = character(0),
-                         file = character(), col = 1L, fila = 1L,
-                         free_mem = FALSE) {
+save_cel_xcl <- function(x, file = character(), hoja = 1L,
+                         rfc = character(),
+                         col = 1L, fila = 1L,
+                         free = FALSE) {
     stopifnot(exprs = {
         inherits(x, "data.frame")
         filled_char(file) && is_scalar(file)
         ok_fname(file) #existe o puede crearse
-        is.character(hoja)
-        is.character(cref)
-        is.numeric(fila)
-        is.numeric(col)
+
+        (filled_num(hoja) || filled_char(hoja)) && is_scalar(hoja)
+
+        ifelse(is_vacuo(rfc), is.character(rfc),
+               is_scalar(rfc) && filled_char(rfc) &&
+               grepl("[A-Z]+\\$[0-9]+", rfc))
+
+        is_scalar(fila) && filled_num(fila) &&
+            as.integer(fila) >= 1 && fila < 1048576
+
+        is_scalar(col) && filled_num(col) &&
+            as.integer(col) >= 1 && col < 16384
     })
 
-    wb <- XLConnect::loadWorkbook(file, create = !file.exists(file))
-
-    if (is_vacuo(hoja)) {
-        hoja <- 1L
-    } else {
-        if (!XLConnect::existsSheet(wb, hoja)) {
-            XLConnect::createSheet(wb, hoja)
-        }
-    }
-    
-    ##referencia; ÔjÔ no es absoluta $C$3 p.ej
-    if (filled_char(cref)) {
-        if (nzchar(cref) && grepl("[A-Za-z]+\\$[0-9]+", cref)) {
-            mm <- cref2idx(cref)
-            fila  <- mm[1, 1]
-            col  <- mm[1, 2]
-        } else {
-            stop("... referencia incorrecta !!!")
-        }
+    ##referencia; C3 o C$3; ÔjÔ no es absoluta como $C$3 p.ej
+    if (filled_char(rfc)) {
+        mm <- XLConnect::cref2idx(rfc)
+        fila  <- mm[1, 1]
+        col  <- mm[1, 2]
     } else {
         fila <- as.integer(fila)
         col <- as.integer(col)
-        stopifnot("arg. fila inadmisible" = filled_int(fila) &&
-                      fila >= 1L && fila < 1048576,
-                  "arg. col inadmisible" = filled_int(col) &&
-                  col >= 1L && col < 16384)
     }
+
+    fe <- file.exists(file)
+    wb <- try(XLConnect::loadWorkbook(file, create = !fe),
+              silent = TRUE)
+    stopifnot("!!! ERROR libro" = inherits(wb, "workbook"))
     
-    XLConnect::writeWorksheet(wb, x, sheet = hoja, startRow = fila,
-                              startCol = col, header = TRUE)
-    XLConnect::saveWorkbook(wb)
+    if (fe) {
+        sh <- XLConnect::getSheets(wb)
+    } else {
+        sh <- character()
+    }
+
+    ## hoja int. -> char.
+    if (is.numeric(hoja)) {
+        hoja <- as.integer(hoja)
+        if (hoja == 0L) hoja <- 1L
+        if (hoja <= length(sh)) {
+            hoja <- sh[hoja]
+        } else { #file no exist. u hoja > num.hojas
+            hoja <- tempfile("", "") %>%
+                substr(3, 7) %>%
+                paste0("H", hoja, .) #confianza 8 carac. no exista
+        }
+    }
+    if (!is.element(hoja, sh)) {
+        XLConnect::createSheet(wb, hoja)
+    }
+        
+    ## capturar errores
+    tr <- try({XLConnect::writeWorksheet(wb, x, sheet = hoja,
+                                  startRow = fila, startCol = col,
+                                  header = TRUE)
+                                  XLConnect::saveWorkbook(wb)},
+              silent = TRUE)
 
     if (free) {
         xlcFreeMemory()
     }
+
+    ko <- inherits(tr, "try-error")
+    if (ko) {
+        warning("\n... Error escribir o guardar archivo !!!")
+    }
+    
+    !ko
+}
+
+#' Leer-excel
+#' @description Lee datos en un rango de celdas de libro excel
+#' @details Ver explicación en la ayuda de la función
+#'     \code{save_cel_xcl}
+#' @param file character: nombre del archivo
+#' @param hoja nombre (character) o número (numeric) de la hoja
+#' @param rf1 character: referencia de la celda superior izquierda
+#'     del rango; por omisión, "A$1"
+#' @param rf2 character: referencia de la celda inferior derecha del
+#'     rango
+#' @param free logical: TRUE para liberar memoria; FALSE por omisión
+#' @return data.frame o NULL
+#' @seealso save_cel_xcl
+#' @export
+read_cel_xcl <- function(file = character(), hoja = 1L,
+                         rf1 = "A$1", rf2 = character(),
+                         free = FALSE) {
+    stopifnot("arg. file inadmisible" = filled_char(file) &&
+                  is_scalar(file) && file.exists(file),
+
+              "arg. hoja inadmisible" = (filled_num(hoja) ||
+                  filled_char(hoja)) && is_scalar(hoja),
+
+              "arg. rf1 inadmisible" = filled_char(rf1) &&
+                  is_scalar(rf1) && nzchar(rf1) &&
+                  grepl("[A-Z]+\\$[0-9]+", rf1),
+
+              "arg. rf2 inadmisible" = filled_char(rf2) &&
+                  is_scalar(rf2) && nzchar(rf2) &&
+                  grepl("[A-Z]+\\$[0-9]+", rf2)
+              )
+
+    wb <- try(XLConnect::loadWorkbook(file), silent = TRUE)
+    stopifnot("error lectura" = inherits(wb, "workbook"))
+
+    if (is.numeric(hoja)) hoja <- as.integer(hoja)
+    sh <- XLConnect::getSheets(wb)
+    stopifnot("arg. hoja inadmisible" = ifelse(is.character(hoja),
+               is.element(hoja, sh),
+               hoja >= 1 && hoja <= length(sh))
+        )
+    
+    mm <- XLConnect::cref2idx(rf1)
+    r1  <- mm[1, 1]
+    c1  <- mm[1, 2]
+
+    mm <- XLConnect::cref2idx(rf2)
+    r2 <- mm[1, 1]
+    c2 <- mm[1, 2]
+
+    df <- try(XLConnect::readWorksheet(wb, hoja, r1, c1, r2, c2),
+              silent = TRUE)
+    if (!inherits(df, "data.frame")) {
+        df <- NULL
+        warning("\n... Error de lectura !!!")
+    }
+
+    if (free) {
+        xlcFreeMemory()
+    }
+
+    invisible(df)
 }
 
 ##--- expresiones SQL ---
 
 ## ListOfListOfCharacter,Character,Character,Character Character ->
 ## Character
-#' expresion SQL
-##' @description produce expresión SQL a partir de listas con
-##'     estructura list(a=c(TABLA, alias), k=c(campos), as=c(alias de
-##'     campos)) y, si se requiere, clausulas where, inner join,
-##'     left(right) join, order by y group by. Si es un join, se
-##'     requieren dos tablas y la cláusula on completada por whr
-##'     (where). El tipo de join se puede indicar sólo con las
-##'     primeras letras; e.g in(nner)
-##' @param lak lista con vectores tabla-alias, campos de la tabla y
-##'     nombres de columnas del data.frame que resulte de la consulta
-##' @param whr cláusula where
-##' @param ord cláusula order by
-##' @param gby cláusula group by
-##' @param joi cláusula join
-##' @return expresión de consulta SQL
-##' @examples
-##' xsql(list(list(a=c("pria", "a"), k=c("c1", "c2"), as=c("a", "b")),
-##'           list(a=c("prib", "b"), k=c("c1", "c2"), as=c("a2", "b2"))),
-##'      whr="a.c1=b.c1")
-##'   select a.c1 as a,a.c2 as b,b.c1 as a2,b.c2 as b2 from pria a,prib b
-##'       where a.c1=b.c1
-##'
-##' xsql(list(list(a=c("pria", "a"), k=c("c1", "c2"), as=c("a", "b")),
-##'           list(a=c("prib", "b"), k=c("c1", "c2"), as=c("a2", "b2"))),
-##'      whr="a.c1=b.c1", joi="le")
-##'   select a.c1 as a,a.c2 as b,b.c1 as a2,b.c2 as b2 from pria a left
-##'       join prib b on a.c1=b.c1
-##'
-##' xsql(list(a=c("prib", "b"), k=c("c1", "c2"), as=c("a", "b")))
-##'   select b.c1 as a,b.c2 as b from prib b
-##' @export
-##' @import magrittr
-##' @importFrom assertthat assert_that
+
+#' SQL-expresión
+#' @description Construye expresión SQL
+#' @details Los nombres (y sus alias) de las tablas involucradas en la
+#' expresión, así como los campos y su nombre en el resultado
+#' (cláusula «as»), se especifican en una lista de listas (una para
+#' cada tabla). La lista de cada tabla compuesta de 3 vectores tipo
+#' character: uno nombrado "a", con el nombre de la
+#' tabla y su alias; otro de nombre "k" a partir de listas con
+#'     estructura list(a=c(TABLA, alias), k=c(campos), as=c(alias de
+#'     campos)) y, si se requiere, clausulas where, inner join,
+#'     left(right) join, order by y group by. Si es un join, se
+#'     requieren dos tablas y la cláusula on completada por whr
+#'     (where). El tipo de join se puede indicar sólo con las
+#'     primeras letras; e.g in(nner)
+#' @param lak lista con vectores tabla-alias, campos de la tabla y
+#'     nombres de columnas del data.frame que resulte de la consulta
+#' @param whr cláusula where
+#' @param ord cláusula order by
+#' @param gby cláusula group by
+#' @param joi cláusula join
+#' @return expresión de consulta SQL
+#' @examples
+#' xsql(list(list(a=c("pria", "a"), k=c("c1", "c2"), as=c("a", "b")),
+#'           list(a=c("prib", "b"), k=c("c1", "c2"), as=c("a2", "b2"))),
+#'      whr="a.c1=b.c1")
+#'   select a.c1 as a,a.c2 as b,b.c1 as a2,b.c2 as b2 from pria a,prib b
+#'       where a.c1=b.c1
+#'
+#' xsql(list(list(a=c("pria", "a"), k=c("c1", "c2"), as=c("a", "b")),
+#'           list(a=c("prib", "b"), k=c("c1", "c2"), as=c("a2", "b2"))),
+#'      whr="a.c1=b.c1", joi="le")
+#'   select a.c1 as a,a.c2 as b,b.c1 as a2,b.c2 as b2 from pria a left
+#'       join prib b on a.c1=b.c1
+#'
+#' xsql(list(a=c("prib", "b"), k=c("c1", "c2"), as=c("a", "b")))
+#'   select b.c1 as a,b.c2 as b from prib b
+#' @export
+#' @import magrittr
+#' @importFrom assertthat assert_that
 xsql <- function(lak = NULL, whr = "", ord = "", gby = "", joi = ""){
     assert_that(!is.null(lak))
     if (!is.list(lak[[1]])) lak <- list(lak)
@@ -698,19 +798,115 @@ xsql <- function(lak = NULL, whr = "", ord = "", gby = "", joi = ""){
     sq
 }
 
+#' SQL-expresión
+#' @description Construye expresión SQL
+#' @details Los nombres de las tablas y los campos respectivos
+#'     involucradas en la expresión, se especifican en una lista
+#'     compuesta de tantas listas como tablas intervienen en la
+#'     expresión. La lista de cada tabla está compuesta de dos
+#'     vectores tipo character: el primero es el nombre de la tabla;
+#'     el segundo, el de los campos tomados en cuenta. Si el primero o
+#'     el segundo tienen sus elementos nombrados, estos nombres se
+#'     utilizarán como "alias" en el caso de la tabla, o para
+#'     renombrar el campo en el resultado de la consulta (en la
+#'     cláusula «as»). Si sólo hay una tabla involucrada, las listas
+#'     pueden ser sustituidas por un vector.
+#'
+#'     Las cláusulas «where», «join» (inner, left, right), «order by»,
+#'     «order by», son opcionales y se especifican como argumentos de
+#'     los correspondientes parámetros.
+#'
+#'     Si la expresión contiene un «join», se requieren dos tablas, y
+#'     la cláusula «on» es completada por el argumento al parámetro
+#'     "whr". El tipo de «join» se puede indicar sólo con las primeras
+#'     letras; e.g in(nner)
+#' @param lak character o lista de lista de character
+#' @param whr character: cláusula where
+#' @param ord character: cláusula order by
+#' @param gby character: cláusula group by
+#' @param joi character: cláusula join
+#' @return character
+#' @export
+#' @examples
+#' xsql(list(list("tab", c("cm1", "cm2"))))
+#' #-> "select cm1, cm2 from tab"
+#' xsql(list(list("tab", c(x = "cm1", y = "cm2"))))
+#' #-> "select cm1 as x, cm2 as y from tab"
+#' xsql(list(list(a = "tab", c("cm1", "cm2"))))
+#' #-> "select a.cm1 as x, a.cm2 as y from tab a"
+xsql <- function(x = list(), whr = character(), ord = character(),
+                 qby = character(), joi = character()) {
+    stopifnot(exprs = {
+        "arg. x inadmisible" = (is.list(x) && length(x) &&
+                                all(sapply(x, length) == 2)) ||
+            (filled_char(x) && length(x) == 2)
+        
+        "arg. whr inadmisible" = is.character(whr) &&
+            is_scalar0(whr)
+        "arg. ord inadmisible" = is.character(ord) &&
+            is_scalar0(ord)
+        "arg. qby inadmisible" = is.character(qby) &&
+            is_scalar0(qby)
+        "arg. joi inadmisible" = is.character(joi) &&
+            is_scalar0(joi)
+    })
+
+    if (filled_char(joi)) {
+        cc <- paste(c("inner", "left", "right"), "join")
+        joi <- jn[pmatch(joi, cc)]
+        stopifnot("join 2 tablas" = is.list(x) && length(x) == 2,
+                  "arg. joi inadmisible" = !is.na(joi))
+    }
+
+    tbc <- function(x) {
+        nx <- names(x)
+        cm <- x[[2]]
+        tb <- x[[1]]
+        if (filled(nx)) {
+            cm <- paste(nx[1], cm, sep = ".")
+            tb <- paste(tb, nx[1])
+        }
+        x[[1]] <- tb
+        x[[2]] <- paste(cm, collapse = ",")
+        x
+    }
+
+    ## Reduce(function(x,y)c(paste(x[[1]], y[[1]], sep = ","),
+    ##                       paste(c(x[[2]], y[[2]]), collapse = ",")),
+    ##        list(list("a ee", c("ee.a", "ee.b")),
+    ##             list("b ee", c("ee.c", "ee.d"))),
+    ##        init=list("", "")) %>%
+    ##     substring(2)
+    
+    ## Reduce(function(x,y)c(paste(x[[1]], y[[1]], sep = ","),
+    ##                       paste(c(x[[2]], y[[2]]), collapse = ",")),
+    ##        list(list("a ee", c("ee.a", "ee.b"))),
+    ##        init=list("", "")) %>%
+    ##     substring(2)
+
+    x <- lapply(x, tbc) %>%
+        Reduce(function(x, y)c(paste(x[[1]], y[[1]], sep = ","),
+                               paste(c(x[[2]], y[[2]]), collapse = ",")),
+               ., init = list("", "")) %>%
+        substring(2)
+    
+    ss <- paste("select", x[2], "from", x[1])
+    ss
+}
+
 ## Character, VectorOfCharacter, VectorOfCharacter -> Character
 ##' Versión simplificada de xsql
-##' @description devuelve expresión SQL a partir de TABLA, CAMPOS y
-##'     ALIAS de campos
-##' @param tabla nombre de tabla (entre comillas)
-##' @param campos vector de caracteres con nombres de campos
-##' @param as vector de caracteres con los alias de campos
-##' @examples
-##' xsql_s("pri", c("a","b"), c("x", "y"))
-##'   "select a.a as x,a.b as y from pri a"
-##' xsql_s("pri", c("a","b")) "select a.a,a.b from pri a"
-##' @export
-##' @importFrom assertthat assert_that
+#' @description devuelve expresión SQL a partir de TABLA, CAMPOS y
+#'     ALIAS de campos
+#' @param tabla nombre de tabla (entre comillas)
+#' @param campos vector de caracteres con nombres de campos
+#' @param as vector de caracteres con los alias de campos
+#' @examples
+#' xsql_s("pri", c("a","b"), c("x", "y"))
+#'   "select a.a as x,a.b as y from pri a"
+#' xsql_s("pri", c("a","b")) "select a.a,a.b from pri a"
+#' @export
+#' @importFrom assertthat assert_that
 xsql_s <- function(tabla, campos, as = NULL, alias){
 
     assert_that(!(missing(tabla) || missing(campos)),
@@ -733,15 +929,15 @@ xsql_s <- function(tabla, campos, as = NULL, alias){
     xsql(list(a=c(tabla, alias), k=campos, as=as))
 }
 
-##' Parámetro lista de \code{xsql}
-##' @description facilita construir lista para llamar a \code{xsql}
-##' @param db nombre de tabla (entre comillas)
-##' @param km vector de caracteres con nombre de campos
-##' @param al nombre de alias de la tabla
-##' @param as vector de caracteres con nombre de columnas
-##' @return lista tabla-campos apta para llamar a función \code{xsql}
-##' @export
-##' @importFrom assertthat assert_that
+#' Parámetro lista de \code{xsql}
+#' @description facilita construir lista para llamar a \code{xsql}
+#' @param db nombre de tabla (entre comillas)
+#' @param km vector de caracteres con nombre de campos
+#' @param al nombre de alias de la tabla
+#' @param as vector de caracteres con nombre de columnas
+#' @return lista tabla-campos apta para llamar a función \code{xsql}
+#' @export
+#' @importFrom assertthat assert_that
 lxs <- function(db, km, al="a", as=NULL){
     if(!is.null(as)){
         assertthat::assert_that(is.character(as),
@@ -751,24 +947,24 @@ lxs <- function(db, km, al="a", as=NULL){
 }
 
 ## VectorOfCharacter -> character ' SQL union
-##' SQL union
-##' @description Construye la expresión \code{union} de dos o más
-##'     expresiones SQL. \code{union} incluye sólo una vez cada
-##'     registro en el resultado de la consulta; \code{union all} los
-##'     incluye a todos. Para identificar los registros que resulten
-##'     de mandar a ejecutar las subconsultas, a estas se le puede
-##'     agregar un campo que devuelva una "constante". En el
-##'     resultado, la columna tendrá el nombre \code{nomlab}.
-##' @param x vector de caracteres cuyos elementos son expresiones SQL
-##' @param all \code{union all}?; TRUE por defecto
-##' @param nomcol nombre de la columna si se quiere identificar las
-##'     subconsultas
+#' SQL union
+#' @description Construye la expresión \code{union} de dos o más
+#'     expresiones SQL. \code{union} incluye sólo una vez cada
+#'     registro en el resultado de la consulta; \code{union all} los
+#'     incluye a todos. Para identificar los registros que resulten
+#'     de mandar a ejecutar las subconsultas, a estas se le puede
+#'     agregar un campo que devuelva una "constante". En el
+#'     resultado, la columna tendrá el nombre \code{nomlab}.
+#' @param x vector de caracteres cuyos elementos son expresiones SQL
+#' @param all \code{union all}?; TRUE por defecto
+#' @param nomcol nombre de la columna si se quiere identificar las
+#'     subconsultas
 #' @param idcon vector de caracteres o de enteros que servirán para
 #'     etiquetar las subconsultas
-##' @return expresión SQL
-##' @export
-##' @importFrom assertthat assert_that
-##' @examples
+#' @return expresión SQL
+#' @export
+#' @importFrom assertthat assert_that
+#' @examples
 #' xsql_u(c("xsqla", "xsqlb", "xsqlc")) ->
 #'        "xsqla union all (xsqlb union all (xsqlc))"
 xsql_u <- function(x, all = TRUE, nomcol = character(),

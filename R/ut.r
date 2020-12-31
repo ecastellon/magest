@@ -28,6 +28,15 @@ is_scalar <- function(x) {
     length(x) == 1L
 }
 
+#' Escalar
+#' @description Es vector vacío o con un elemento?
+#' @param x
+#' @return logical
+#' @keywords internal
+is_scalar0 <- function(x) {
+    length(x) <= 1L
+}
+
 #' length
 #' @description vector has length greater than zero?
 #' @param x vector
