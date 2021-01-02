@@ -83,6 +83,33 @@ filled_log <- function(x) {
     is.logical(x) && length(x)
 }
 
+#' list-no-vac
+#' @description vector is of logical type and has elements?
+#' @param x vector
+#' @return logical
+#' @keywords internal
+filled_list <- function(x) {
+    is.list(x) && length(x)
+}
+
+#' valida-name
+#' @description Valida nombres de variables
+#' @param x vector
+#' @return logical
+#' @keywords internal
+is_name <- function(x) {
+    length(x) && identical(x, make.names(x))
+}
+
+#' nombre-scalar
+#' @description Valida nombre escalar
+#' @param x vector
+#' @return logical
+#' @keywords internal
+is_scalar_name <- function(x) {
+    length(x) == 1L && identical(x, make.names(x))
+}
+
 ## --- data.frame ---
 #' @export
 quitar_0 <- function(x, excepto) UseMethod("quitar_0")
@@ -133,6 +160,28 @@ quitar_0.data.frame <- function(df, excepto = character()) {
 }
 
 ##--- strings ---
+
+##' Anidar entre caracter
+##' @description
+##'     A una cadena de caracteres le agrega, al inicio y al final, un
+##'     caracter, p.ej. para encerrar entre paréntesis. La
+##'     implementación es recursiva cuando se aplica a un vector de
+##'     caracteres
+##' @param x vector tipo character
+##' @param cc vector con los caracteres delimitadores; "()" por default
+##' @return string
+##' @export
+##' @examples
+##' nest_str(c("aa", "bb", "cc")) -> "aa(bb(cc))"
+##' nest_str(c("aa", "bb"), c("[", "]")) -> "aa[bb]"
+##' nest_str(c("", "bb"), c("[", "]")) -> "[bb]"
+nest_str <- function(x, cc = c("(", ")")) {
+    if (length(x) == 1) {
+        x
+    } else {
+        paste0(x[1], cc[1], nest_str(x[-1], cc), cc[2])
+    }
+}
 
 #' fabrica código
 #' @description Produce función que genera nombres de variables

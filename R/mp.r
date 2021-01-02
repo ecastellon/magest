@@ -697,107 +697,6 @@ read_cel_xcl <- function(file = character(), hoja = 1L,
 
 ##--- expresiones SQL ---
 
-## ListOfListOfCharacter,Character,Character,Character Character ->
-## Character
-
-#' SQL-expresión
-#' @description Construye expresión SQL
-#' @details Los nombres (y sus alias) de las tablas involucradas en la
-#' expresión, así como los campos y su nombre en el resultado
-#' (cláusula «as»), se especifican en una lista de listas (una para
-#' cada tabla). La lista de cada tabla compuesta de 3 vectores tipo
-#' character: uno nombrado "a", con el nombre de la
-#' tabla y su alias; otro de nombre "k" a partir de listas con
-#'     estructura list(a=c(TABLA, alias), k=c(campos), as=c(alias de
-#'     campos)) y, si se requiere, clausulas where, inner join,
-#'     left(right) join, order by y group by. Si es un join, se
-#'     requieren dos tablas y la cláusula on completada por whr
-#'     (where). El tipo de join se puede indicar sólo con las
-#'     primeras letras; e.g in(nner)
-#' @param lak lista con vectores tabla-alias, campos de la tabla y
-#'     nombres de columnas del data.frame que resulte de la consulta
-#' @param whr cláusula where
-#' @param ord cláusula order by
-#' @param gby cláusula group by
-#' @param joi cláusula join
-#' @return expresión de consulta SQL
-#' @examples
-#' xsql(list(list(a=c("pria", "a"), k=c("c1", "c2"), as=c("a", "b")),
-#'           list(a=c("prib", "b"), k=c("c1", "c2"), as=c("a2", "b2"))),
-#'      whr="a.c1=b.c1")
-#'   select a.c1 as a,a.c2 as b,b.c1 as a2,b.c2 as b2 from pria a,prib b
-#'       where a.c1=b.c1
-#'
-#' xsql(list(list(a=c("pria", "a"), k=c("c1", "c2"), as=c("a", "b")),
-#'           list(a=c("prib", "b"), k=c("c1", "c2"), as=c("a2", "b2"))),
-#'      whr="a.c1=b.c1", joi="le")
-#'   select a.c1 as a,a.c2 as b,b.c1 as a2,b.c2 as b2 from pria a left
-#'       join prib b on a.c1=b.c1
-#'
-#' xsql(list(a=c("prib", "b"), k=c("c1", "c2"), as=c("a", "b")))
-#'   select b.c1 as a,b.c2 as b from prib b
-#' @export
-#' @import magrittr
-#' @importFrom assertthat assert_that
-xsql <- function(lak = NULL, whr = "", ord = "", gby = "", joi = ""){
-    assert_that(!is.null(lak))
-    if (!is.list(lak[[1]])) lak <- list(lak)
-    una_t <- length(lak) == 1
-    ## más de una tabla es un join
-    assert_that((nzchar(whr) || nzchar(joi)) == !una_t,
-                msg="where o join si más de una tabla")
-    joins <- c("left join", "inner join", "right join")
-    if(nzchar(joi)){
-        joi <- pmatch(joi, joins)
-        assert_that(!is.na(joi), nzchar(whr),
-                    length(lak) == 2,
-                    msg = "join correcto entre 2 tablas")
-    }
-        
-    ## lista de campos, alias y tablas correctos
-    assert_that(
-        all(vapply(lak, function(x)length(x[["k"]]) > 0,
-                   TRUE)),
-        all(vapply(lak, function(x)length(x[["a"]]) == 2,
-                   TRUE)),
-        all(vapply(lak, function(x) is.null(x[["as"]]) |
-                                    length(x[["k"]]) ==
-                                    length(x[["as"]]), TRUE)))
-    sq <- vapply(lak,
-                 function(x){
-                     if (!is.null(x[["as"]])){
-                         x[["k"]] <- paste(x[["k"]], x[["as"]],
-                                           sep=" as ")
-                     }
-                     sp <- ifelse(nzchar(x[["a"]][2]), ".", "")
-                     paste(x[["a"]][2], x[["k"]], sep=sp,
-                           collapse=",")
-                 }, "", USE.NAMES=FALSE) %>%
-        paste(collapse=",") %>% paste("select", ., "from",
-                                      paste(lak[[1]][["a"]],
-                                            collapse=" "))
-    ## join
-    if(!una_t){
-        if(nzchar(whr)){
-            sq <- vapply(lak[-1], function(y)paste(y[["a"]], collapse=" "),
-                         "", USE.NAMES=FALSE) %>% paste(collapse=",") %>%
-                paste(sq, ., sep=",") %>%
-                paste("where", whr)
-        } else{
-            if(!is.na(joi)){
-                sq <- paste(sq, joins[joi],
-                            paste(lak[[2]][["a"]], collapse=" "),
-                            "on", whr)
-            }
-        }
-    }
-  
-    ## TODO validar expresiones
-    if(nzchar(ord)) sq <- paste(sq, "order by", ord)
-    if(nzchar(gby)) sq <- paste(sq, "group by", gby)
-    sq
-}
-
 #' SQL-expresión
 #' @description Construye expresión SQL
 #' @details Los nombres de las tablas y los campos respectivos
@@ -814,13 +713,14 @@ xsql <- function(lak = NULL, whr = "", ord = "", gby = "", joi = ""){
 #'
 #'     Las cláusulas «where», «join» (inner, left, right), «order by»,
 #'     «order by», son opcionales y se especifican como argumentos de
-#'     los correspondientes parámetros.
+#'     los correspondientes parámetros. Estas se deben introducir con
+#'     la sintaxis correcta pues la función no valida eso.
 #'
 #'     Si la expresión contiene un «join», se requieren dos tablas, y
 #'     la cláusula «on» es completada por el argumento al parámetro
 #'     "whr". El tipo de «join» se puede indicar sólo con las primeras
 #'     letras; e.g in(nner)
-#' @param lak character o lista de lista de character
+#' @param x lista de lista de character
 #' @param whr character: cláusula where
 #' @param ord character: cláusula order by
 #' @param gby character: cláusula group by
@@ -834,12 +734,16 @@ xsql <- function(lak = NULL, whr = "", ord = "", gby = "", joi = ""){
 #' #-> "select cm1 as x, cm2 as y from tab"
 #' xsql(list(list(a = "tab", c("cm1", "cm2"))))
 #' #-> "select a.cm1 as x, a.cm2 as y from tab a"
+#' tt <- list(list(a = "ta", c(w = "a", x = "b")),
+#'            list(b = "tb", c(y = "c", z = "d")))
+#' xsql(tt, joi = "in", whr = "a.a=b.c")
+#' #-> "select a.a as w,a.b as x, b.c as y, b.d as z ...
+#'      from ta a, tb b inner join on a.a=b.c"
 xsql <- function(x = list(), whr = character(), ord = character(),
                  qby = character(), joi = character()) {
     stopifnot(exprs = {
-        "arg. x inadmisible" = (is.list(x) && length(x) &&
-                                all(sapply(x, length) == 2)) ||
-            (filled_char(x) && length(x) == 2)
+        "arg. x inadmisible" = filled_list(x) &&
+                                all(sapply(x, length) == 2)
         
         "arg. whr inadmisible" = is.character(whr) &&
             is_scalar0(whr)
@@ -853,158 +757,157 @@ xsql <- function(x = list(), whr = character(), ord = character(),
 
     if (filled_char(joi)) {
         cc <- paste(c("inner", "left", "right"), "join")
-        joi <- jn[pmatch(joi, cc)]
+        joi <- cc[pmatch(joi, cc)]
         stopifnot("join 2 tablas" = is.list(x) && length(x) == 2,
-                  "arg. joi inadmisible" = !is.na(joi))
+                  "arg. joi inadmisible" = !is.na(joi),
+                  "arg. whr si join" = filled_char(whr))
+        joi <- paste(joi, "on", whr)
     }
 
     tbc <- function(x) {
-        nx <- names(x)
         cm <- x[[2]]
+        nx <- names(cm)
+        if (filled(nx)) {
+            cm <- paste(cm, nx, sep = " as ")
+        }
+
+        nx <- names(x)
         tb <- x[[1]]
         if (filled(nx)) {
             cm <- paste(nx[1], cm, sep = ".")
             tb <- paste(tb, nx[1])
         }
+        
         x[[1]] <- tb
         x[[2]] <- paste(cm, collapse = ",")
         x
     }
 
-    ## Reduce(function(x,y)c(paste(x[[1]], y[[1]], sep = ","),
-    ##                       paste(c(x[[2]], y[[2]]), collapse = ",")),
-    ##        list(list("a ee", c("ee.a", "ee.b")),
-    ##             list("b ee", c("ee.c", "ee.d"))),
-    ##        init=list("", "")) %>%
-    ##     substring(2)
-    
-    ## Reduce(function(x,y)c(paste(x[[1]], y[[1]], sep = ","),
-    ##                       paste(c(x[[2]], y[[2]]), collapse = ",")),
-    ##        list(list("a ee", c("ee.a", "ee.b"))),
-    ##        init=list("", "")) %>%
-    ##     substring(2)
-
+    rdu <- function(x, y) {
+        c(paste(x[[1]], y[[1]], sep = ","),
+          paste(c(x[[2]], y[[2]]), collapse = ","))
+    }
     x <- lapply(x, tbc) %>%
-        Reduce(function(x, y)c(paste(x[[1]], y[[1]], sep = ","),
-                               paste(c(x[[2]], y[[2]]), collapse = ",")),
-               ., init = list("", "")) %>%
+        Reduce(rdu, ., init = list("", "")) %>%
         substring(2)
     
     ss <- paste("select", x[2], "from", x[1])
+
+    ## condiciones
+    if (is_scalar(joi)) {
+        ss <- paste(ss, joi)
+    } else {
+        if (filled(whr) && nzchar(whr)) {
+            ss <- paste(ss, "where", whr)
+        }
+    }
+
+    if(filled(ord) && nzchar(ord)) ss <- paste(ss, "order by", ord)
+    if(filled(qby) && nzchar(gby)) ss <- paste(ss, "group by", gby)
+    
     ss
 }
 
-## Character, VectorOfCharacter, VectorOfCharacter -> Character
-##' Versión simplificada de xsql
-#' @description devuelve expresión SQL a partir de TABLA, CAMPOS y
-#'     ALIAS de campos
-#' @param tabla nombre de tabla (entre comillas)
-#' @param campos vector de caracteres con nombres de campos
-#' @param as vector de caracteres con los alias de campos
+#' SQL expresión
+#' @description Expresión SQL sencilla
+#' @param x character: nombre de la tabla
+#' @param cm character: nombre de los campos. Si los elementos con
+#'     nombre, estos son puestos en la cláusula «as». Por omisión es
+#'     "*".
+#' @return character
+#' @export
 #' @examples
-#' xsql_s("pri", c("a","b"), c("x", "y"))
-#'   "select a.a as x,a.b as y from pri a"
-#' xsql_s("pri", c("a","b")) "select a.a,a.b from pri a"
-#' @export
-#' @importFrom assertthat assert_that
-xsql_s <- function(tabla, campos, as = NULL, alias){
+#' xsql_s("a", c(x = "a", y = "b"))
+#' #-> "select a as x,b as y from a"
+#' xsql_s("a")
+#' #-> "select * from a"
+xsql_s <- function(x = character(), cm = "*") {
+    stopifnot("arg. inadmisibles" = filled_char(x) &&
+                  is_scalar(x) && nzchar(x) &&
+                  filled_char(cm))
 
-    assert_that(!(missing(tabla) || missing(campos)),
-                ok_nombre(tabla),
-                is.character(campos) && all(nzchar(campos)),
-                msg = "cuáles campos de cuál tabla?")
-
-    if (!is.null(as)){
-        assert_that(is.character(as) && all(nzchar(as)) &&
-                    length(campos) == length(as),
-                    msg = "algún nombre de campo no es válido\n")
-    }
-
-    if (missing(alias)){
-        alias <- ""
-    } else {
-        assert_that(ok_nombre(alias),
-                    msg = "alias de tabla no es válido\n")
-    }
-    xsql(list(a=c(tabla, alias), k=campos, as=as))
-}
-
-#' Parámetro lista de \code{xsql}
-#' @description facilita construir lista para llamar a \code{xsql}
-#' @param db nombre de tabla (entre comillas)
-#' @param km vector de caracteres con nombre de campos
-#' @param al nombre de alias de la tabla
-#' @param as vector de caracteres con nombre de columnas
-#' @return lista tabla-campos apta para llamar a función \code{xsql}
-#' @export
-#' @importFrom assertthat assert_that
-lxs <- function(db, km, al="a", as=NULL){
-    if(!is.null(as)){
-        assertthat::assert_that(is.character(as),
-                                length(km) == length(as))
-    }
-    list(list(a=c(db, al), k=km, as=as))
-}
-
-## VectorOfCharacter -> character ' SQL union
-#' SQL union
-#' @description Construye la expresión \code{union} de dos o más
-#'     expresiones SQL. \code{union} incluye sólo una vez cada
-#'     registro en el resultado de la consulta; \code{union all} los
-#'     incluye a todos. Para identificar los registros que resulten
-#'     de mandar a ejecutar las subconsultas, a estas se le puede
-#'     agregar un campo que devuelva una "constante". En el
-#'     resultado, la columna tendrá el nombre \code{nomlab}.
-#' @param x vector de caracteres cuyos elementos son expresiones SQL
-#' @param all \code{union all}?; TRUE por defecto
-#' @param nomcol nombre de la columna si se quiere identificar las
-#'     subconsultas
-#' @param idcon vector de caracteres o de enteros que servirán para
-#'     etiquetar las subconsultas
-#' @return expresión SQL
-#' @export
-#' @importFrom assertthat assert_that
-#' @examples
-#' xsql_u(c("xsqla", "xsqlb", "xsqlc")) ->
-#'        "xsqla union all (xsqlb union all (xsqlc))"
-xsql_u <- function(x, all = TRUE, nomcol = character(),
-                   idcon = character()){
-    nn <- length(x)
-    assert_that(is.character(x),  nn > 1,
-                msg = "más de una expresión SQL")
-
-    ## nombra las subconsultas para auxiliar la identificación de los
-    ## registros resultantes de cada una
-    if (length(nomcol)){
-        assert_that(ok_nombre(nomcol),
-                    msg = "falta nombre de índices de consulta")
-        if (!length(idcon)){
-            idcon <- seq_len(nn)
-        } else {
-            assert_that(length(idcon) == nn,
-                        msg = "número de nombres y de subconsultas")
-            ## para darles nombres
-            if (is.character(idcon)){
-                idcon <- sQuote(idcon)
-            }
+    if (!is_scalar(cm)) {
+        nm <- names(cm)
+        if (filled(nm)) {
+            cm <- paste(cm, nm, sep = " as ")
         }
-        ## se agregan a la expresión como constantes
-        x <- vapply(seq_along(x),
-                     function(z){
-                         cc <- paste0("\\1,", nomcol, "=",
-                                      idcon[z], "\\2")
-                         sub("(.+)(\\s+from.+)", cc, x[z], perl = TRUE)
-                     },
-                     "a", USE.NAMES = FALSE)
+        cm <- paste(cm, collapse = ",")
     }
-
-    nest_str(c(paste(x[-nn],
-                    paste0("union", ifelse(all, " all", ""))),
-              x[nn]))
+    paste("select", cm, "from", x)
 }
 
-#' Expresion SQL encuestas MAG
-#' @description leer cuadros con estructura de códigos
+#' SQL union
+#' @description Construye la expresión SQL "union"
+#' @details Con «union» se juntan (al modo de un \code{rbind}) en un
+#'     solo conjunto de datos los resultados de varias consultas que
+#'     producen columnas respectivas del mismo tipo. Para identificar
+#'     en el resultado final los registros obtenidos con cada
+#'     consulta, se puede agregar a cada una un campo de valor
+#'     "constante", el cual aparecerá en el data.frame cuando se mande
+#'     ejecutar la consulta. La función brinda esa facilidad por medio
+#'     de los parámetros "idc" y "cid"
+#'
+#'     La expresión «union» tiene dos variantes: «union» que no
+#'     devuelve registros que se repiten, y «union all» que incluye a
+#'     todos.
+#' @param x character: vector con las expresiones SQL
+#' @param idc character o numeric: sus elementos sirven para etiquetar
+#'     los resultados de cada consulta. Es opcional; por omisión,
+#'     secuencia de enteros de longitud igual a la de x
+#' @param cid character: nombre de la columna del conjunto de datos,
+#'     que alojará las etiquetas de las consultas. Es opcional; por
+#'     omisión, "con"
+#' @param all logical: \code{union all}?; TRUE por omisión
+#' @return character
+#' @seealso xsql_t
+#' @export
+#' @examples
+#' cn <- c("select x, y from tx where y = 'a'",
+#'         "select x, z from tx where z = 'b'")
+#' xsql_u(cn, idc = c(1, 2), cid = "set")
+#' #-> "select x, y, set = 1 from tx where y = 'a' union all(...
+#'      select x, z, set = 2 from tx where z = 'b')
+#' # todos los registros que produzca la primera consulta llevarán
+#' # "1" en la columna "set" del data.frame que resulte de hacer la
+#' # consulta a la base de datos, y todos los producidos por la segunda
+#' # llevarán "2". Se supone que "y" y "z" son de igual tipo.
+xsql_u <- function(x = character(), idc = seq_along(x),
+                   cid = "con", all = TRUE) {
+    stopifnot(exprs = {
+        "arg. x inadmisible" = filled_char(x) && !is_scalar(x)
+        "arg. idc inadmisible" = is.character(idc) || is.numeric(idc)
+        "arg. idc,cid inadmisible" = ifelse(is_vacuo(idc),
+                                            is_vacuo(cid),
+                                            filled_char(cid) &&
+                                            is_scalar(cid) &&
+                                            length(idc) == length(x))
+    })
+
+    ## agrega constantes
+    if (filled(idc)) {
+        if (filled_char(idc)) {
+            idc <- sQuote(idc)
+        }
+        ac <- function(z) {
+            cc <- paste0("\\1,", cid, "=", idc[z], "\\2")
+            sub("(.+)(\\s+from.+)", cc, x[z], perl = TRUE)
+        }
+        x <- vapply(seq_along(x), ac, "a", USE.NAMES = FALSE)
+    }
+
+    cc <- ifelse(all, " union all(", " union(")
+    Reduce(function(x,y){paste0(x, cc, y)}, x) %>%
+        paste0(strrep(")", length(x) - 1)) #strrep R > 3.0.0
+}
+
+#' SQL expresión matriz
+#' @description Expresión SQL para leer campos que forman una matriz
+#'     de datos
+#' @details La mayoría de las tablas donde se almacenan los datos de
+#'     las encuestas son "planas" (todas las variables aparecen como
+#'     un campo de la tabla), aunque para la estimación y el análisis,
+#'     los datos se arreglan en un cuadro con la siguiente estructura
+#'     (c??? es el nombre del campo)
 #' 
 #'     cxx1 cxx2 cxx3 cxx4
 #' 
@@ -1018,81 +921,125 @@ xsql_u <- function(x, all = TRUE, nomcol = character(),
 #' 
 #'     cxx2 cxx4 cxx6 cxx8
 #' 
-#'     donde las columnas son las variables
+#'     donde las columnas del cuadro son las variables (p.ej. cultivo,
+#'     manzanas sembradas, etc.) y las filas corresponden a un
+#'     registro o cuestionario.
 #'
-#'     Cada fila del cuadro corresponde a una consulta SQL, las que
-#'     son combinadas en una sola mediante la cláusula 'union
-#'     all'. A cada consulta se le agrega un campo 'constante' que
-#'     indica a cuál fila del cuadro corresponde, lo que permitirá,
-#'     después de mandar a ejecutar la consulta, identificar los
-#'     registros extraídos por cada subconsulta.
-#' @param nn vector de enteros o de códigos; si es tipo entero, debe
-#'     incluirse el parámetro con la función que construye códigos
-#' @param tab nombre de la tabla que se va a consultar
-#' @param nomvar nombre de las variables
-#' @param idr nombre del campo de la tabla con el nombre de los
-#'     registros
-#' @param nomidr nombre de la columna que traerá los nombres de
-#'     registros de donde se extrae la consulta
-#' @param uall union all? TRUE por defecto
-#' @param nomcol nombre de la columna que llevará la etiqueta de
-#'     consulta
-#' @param idcon nombres que identifican los registros de cada
-#'     consulta; por omisión, los enteros de 1 hasta el número de
-#'     consultas
-#' @param por_fila secuencia de códigos por fila? TRUE por defecto
-#' @param ... parámetros adicionales para matrix_cod
-#' @return expresión SQL
+#'     Cada fila se lee de la base de datos por medio de una
+#'     subconsulta SQL, y todas se combinan en una sola con la
+#'     cláusula 'union all', para reunir (con una especie de
+#'     \code(rbind)) a todos los data.frame que devuelven las
+#'     subconsultas. Para que esto funcione, además del nombre de los
+#'     campos (parámetro "cam"), la función pide el nombre común que
+#'     tendrán las columnas o variables (parámetro "nvb") de los
+#'     data.frame. Por fuerza, el número de campos
+#'     (\code{length(cam)}) debe ser múltiplo del número de columnas
+#'     (\code{length(nvb)}).
+#'
+#'     Es opcional agregar una variable que contenga una etiqueta para
+#'     identificar cada uno de los data.frame. El parámetro "cid"
+#'     recibiría el nombre de esa columna y el parámetro "idc" el de
+#'     las etiquetas, que deberían ser tantas como los data.frame
+#'     parciales. En consecuencia se debería satisfacer la condición
+#'     \code{length(cam) == length(nvb) * length(idc)}.
+#'
+#'     Para fines de comprobación, cada fila de los data.frame trae el
+#'     «id» del registro de la tabla (parámetro "idr", que
+#'     generalmente es el número de cuestionario) de donde se leyeron
+#'     los datos.
+#'
+#' @param x character: nombre de la tabla de la base de datos que se
+#'     va a consultar
+#' @param cam character: nombre de los campos
+#' @param nvb character: nombre de las columnas que tendrá el
+#'     data.frame
+#' @param idr character: nombre del campo de la tabla con el "id" de
+#'     los registros. Por omisión, "quest".
+#' @param xfi logical: la secuencia de los datos que corresponden a
+#'     los campos es por fila (TRUE, por defecto) o por columna
+#'     (FALSE).
+#' @param idc números (integer) o nombres (character) que van
+#'     etiquetar los registros producidos por cada consulta. Es
+#'     opcional.
+#' @param cid character: nombre de la columna que llevará la etiqueta
+#'     de las consultas. Es opcional, pero atado al parámetro ("idc").
+#' @param all logical: incluir todos los registros (TRUE por defecto,
+#'     cláusula «union all») o no permitir duplicados (FALSE, cláusula
+#'     «union»).
+#' @return character
+#' @seealso xsql_u
 #' @export
-#' @importFrom assertthat assert_that
-xsql_t <- function(nn, tabla, nomvar = character(),
-                   idr = NULL, nomidr = "quest", uall = TRUE,
-                   nomcol = NULL, idcon = NULL, ...){
+xsql_t <- function(x = character(), cam = character(),
+                   nvb = character(), idr = "quest", xfi = TRUE,
+                   idc = integer(), cid = character(), all = TRUE) {
 
-    assert_that(!missing(tabla), ok_nombre(tabla),
-                ok_chr(nomvar) && all(nzchar(nomvar)),
-                msg = "falta nombre de tabla o de variables")
+    stopifnot(exprs = {
+        "arg. x inadmisible" = is_scalar_name(x)
+        "arg. cam inadmisible" = is_name(cam)
+        "arg. nvb inadmisible" = is_name(nvb)
+        "arg. cam no mult. nvb" = length(cam) %% length(nvb) == 0
+        "arg. cid inadmisible" = is_vacuo(cid) || is_scalar_name(cid)
+        "arg. idc inadmisible" = (is_vacuo(idc) && is_vacuo(cid)) ||
+            ((filled_num(idc) || is_name(idc)) && filled(cid) &&
+             length(cam) == length(nvb) * length(idc))
+        "arg. idr inadmisible" = is_scalar_name(idr)
+    })
+    
+    cn <- c(idr, nvb)
+    mk <- matrix(cam, ncol = length(nvb), byrow = xfi) %>%
+        cbind(idr, .) %>%
+        set_names(cn) %>%
+        apply(1, function(z) xsql_s(x, cm = setNames(z, cn)))
 
-    nc <- length(nn)
-    nvar <- length(nomvar)
-    ##nvar <- ifelse(!nv, nc, nv)
 
-    nr <- nc %/% nvar
-    assert_that(nc == nvar * nr,
-                msg = paste("número de elementos no es múltiplo",
-                            "de número de variables"))
+    #ss <- split(mk, seq_len(nrow(mk))) %>%
+     #ss <- apply(mk, 1, function(z)xsql_s(x, cm = setNames(z, cn)))
+    #           USE.NAMES = FALSE)
 
-    if (is.null(idcon)){
-        idcon <- seq_len(nr)
-    } else {
-        assert_that(length(idcon) == nr,
-                    msg = paste("número de etiqueta no es igual",
-                                "al número de consultas"))
-    }
-    
-    ## if (!nv){
-    ##     nomvar <- paste0("V_", seq_len(nvar))
-    ## }
-    
-    ##mk <- matrix_cod(nn, ncol = nvar, nomcol = nomvar, ...)
-    mk <- matrix_cod(nn, nomcol = nomvar, ...)
-    
-    if (!is.null(idr)){
-        mk <- cbind(idr, mk)
-        colnames(mk)[1] <- nomidr
-    }
-    
-    ## expresiones de consulta
-    ## TODO incorporar where
-    nc <- colnames(mk)
-    ss <- vapply(split(mk, seq_len(nr)),
-                 function(x){
-                     xsql(lxs(tabla, al = "", km = x, as = nc))
-                 },
-                 "a", USE.NAMES=FALSE)
-    
-    xsql_u(ss, uall, nomcol, idcon)
+    xsql_u(mk, idc, cid, all)
 }
+
+#' matriz de códigos
+#' @description construye una matriz de códigos a partir de un vector
+#'     de códigos, o a partir de un vector de enteros si la función
+#'     recibe la función que los construye.
+#' @param nn vector de enteros o de caracteres (códigos)
+#' @param nomcol nombre de las columnas de la matriz
+#' @param nomfi nombre de las filas
+#' @param por_fila la matriz se llenará¡ por fila por fila? TRUE por
+#'     defecto
+#' @param cod función que generará los códigos si el parámetro nn es
+#'     un vector de enteros
+#' @return matriz de códigos
+#' @export
+#' @examples
+#' ff <- codigo_fac(di = 3)
+#' xx <- matriz_cod(1:6, nomcol = c("x", "y", "z"), cod = ff)
+#' @importFrom assertthat assert_that
+matrix_cod <- function(nn, nomcol = NULL,
+                       nomfi = NULL, por_fila = TRUE, cod = NULL){
+    assert_that((is.numeric(nn) && is.function(cod)) ||
+                is.character(nn),
+                msg = "si entero falta funcion de codigos")
+
+    if (is.numeric(nn)){
+        nn <- cod(as.integer(nn))
+    }
+    
+    ncol <- length(nomcol)
+    if (!length(ncol)){
+        ncol <- length(nn)
+    }
+
+    ## if (!is.null(nomcol)){
+    ##     assert_that(length(nomcol) == ncol,
+    ##                 msg = "columnas inconsistente con nombres")
+    ## }
+
+    matrix(nn, ncol = ncol, byrow = por_fila,
+           dimnames = list(nomfi, nomcol))
+}
+
 
 #' Datos-encuesta
 #' @description Devuelve los datos que produce una consulta SQL, y de
