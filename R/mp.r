@@ -17,6 +17,8 @@ db_constr <- function(ob) UseMethod("db_constr")
 #' @export
 db_open <- function(ob) UseMethod("db_open")
 #' @export
+db_close <- function(ob) UseMethod("db_close")
+#' @export
 db_info <- function(ob) UseMethod("db_info")
 #' @export
 db_tablas <- function(ob, msg) UseMethod("db_tablas")
@@ -40,19 +42,20 @@ is_open <- function(ob) UseMethod("is_open")
 #'
 #' @details Con las propiedades de este objeto se construye la cadena
 #'     de conexión ('connection string') que habilita 'conectarse' o
-#'     'abrir' la base de datos para mandar ejecutar las instrucciones
+#'     'abrir' la base de datos para mandar ejecutar instrucciones
 #'     de consulta.
 #'     
 #'     Para cada servidor de base de datos (SQL server, Excel, Access,
 #'     MySQL, SQLite, etc.) hay una 'connection string' específica
 #'     según la aplicación que sirve de intermediario con el servidor.
 #'
-#'     Con las librería RODBC y RODBCDBI se usan 'driver' o
+#'     Con las librería RODBC y RODBCDBI se usan "driver" o
 #'     controladores ODBC, administrados por la aplicación
-#'     (\url{c:/windows/system32/odbcad32.exe}) administrador de datos
-#'     ODBC. El menú 'controladores' muestra los controladores ODBC
-#'     instalados en el equipo. Si no aparece el indicado hay que
-#'     descargar e instalar el 'software' que lo instala.
+#'     (\url{c:/windows/system32/odbcad32.exe})
+#'     "administrador de datos ODBC". El menú "controladores" muestra
+#'     los "driver" ODBC instalados en el equipo. Si no aparece el
+#'     indicado hay que descargar e instalar el "software" que lo
+#'     instala.
 #'
 #'     En \url{https://www.connectionstrings.com} y otras similares,
 #'     están descritas las 'connection string' más comunes. Estas
@@ -70,6 +73,9 @@ is_open <- function(ob) UseMethod("is_open")
 #'     llenar con la función 'setter' \code{set_odb}.
 #' @return objeto de clase odb
 #' @seealso \code{odb_sql}, \code{odb_xcl}
+#' @examples
+#' ob <- odb(Driver = "{SQL Server}", server = "ser.o.no.ser",
+#'           database = "dt", uid = "yo_mero", pwd = "123-probando")
 #' @export
 odb <- function(...) {
     x <- list(...)
@@ -81,15 +87,21 @@ odb <- function(...) {
 #' @description Es objeto clase odb?
 #' @param x objeto
 #' @return logical
+#' @examples
+#' ob <- odb()
+#' is_odb(ob)
 #' @export
 is_odb <- function(x) {
     inherits(x, "odb")
 }
 
 #' print.odb
-#' @description Muestra los datos. Palabra clave (nombre 'pwd') se
-#'     oculta.
+#' @description Muestra los datos. Si existe palabra clave se muestra
+#'     como serie de "*"
 #' @param x objeto odb
+#' @examples
+#' ob <- odb()
+#' print(odb)
 #' @export
 print.odb <- function(x) {
     xx <- x
@@ -101,9 +113,12 @@ print.odb <- function(x) {
 }
 
 #' str.odb
-#' @description Ver la estructura de objeto odb. Si hay palabra clave,
-#'     se oculta
+#' @description Ver la estructura de objeto odb. Si hay palabra clave
+#'     se muestra como serie de "*"
 #' @param x objeto odb
+#' @examples
+#' ob <- odb()
+#' str(ob)
 #' @export
 str.odb <- function(x) {
     print(x)
@@ -120,6 +135,7 @@ str.odb <- function(x) {
 #' ob <- odb(server = "{SQL Server}", database = "db")
 #' ## agrega user y modifica database
 #' ob <- set_odb(ob, database = "ndb", user = "me")
+#' str(ob)
 #' @export
 set_odb.odb <- function(x, ...) {
     cc <- names(x)
@@ -134,6 +150,8 @@ set_odb.odb <- function(x, ...) {
 #' @param x objeto odb
 #' @param atr character: atributo o propiedad
 #' @return valor atributo o NA
+#' ob <- odb(server = "{SQL Server}", database = "db")
+#' get_atr(ob, "server")
 #' @export
 get_atr.odb <- function(x, atr){
     stopifnot("arg atr inadmisible" = filled_char(atr))
@@ -141,9 +159,10 @@ get_atr.odb <- function(x, atr){
 }
 
 #' Check - odb
-#' @description Comprueba los atributos de objeto odb
+#' @description Comprueba existencia atributos
 #' @param x objeto odb
 #' @return nada
+#' @keywords internal
 odb_check.odb <- function(x) {
     nm <- names(x)
     for (ss in c("driver", "server", "database", "uid", "pwd")) {
@@ -168,6 +187,9 @@ odb_check.odb <- function(x) {
 #' @param uid character: nombre del usuario
 #' @param pwd character: contraseña del usuario
 #' @return objeto de clase odb
+#' @examples
+#' ob <- db_sql(database = "encuestas")
+#' str(ob)
 #' @export
 db_sql <- function(driver = "{SQL Server}", server = character(),
                    database = character(), uid = character(),
@@ -204,6 +226,10 @@ db_sql <- function(driver = "{SQL Server}", server = character(),
 #' @param version7 versión 2007 de excel?. TRUE por defecto.
 #' @param ronly acceso de sólo lectura?. TRUE por defecto.
 #' @return objeto de clase odb
+#' @examples
+#' ox <- db_xcl(system.file(demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' str(ox)
 #' @export
 db_xcl <- function(file = character(), version7 = TRUE, ronly = TRUE) {
 
@@ -231,6 +257,9 @@ db_xcl <- function(file = character(), version7 = TRUE, ronly = TRUE) {
 #'     propiedades del objeto
 #' @param x objeto de clase odb
 #' @return character
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' db_constr(ox)
 #' @export
 db_constr.odb <- function(x) {
     cc <- c(x, recursive = TRUE)
@@ -244,6 +273,10 @@ db_constr.odb <- function(x) {
 #' @param x objeto odb
 #' @return objeto RODBC o NULL
 #' @seealso \code{is_rodbc}
+#' @examples
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package
+#' XLConnect))
+#' op <- db_open(ox)
 #' @export
 db_open.odb <- function(x) {
     constr <- db_constr(x)
@@ -259,7 +292,13 @@ db_open.odb <- function(x) {
 #' Interrumpe conexión
 #' @description Deshabilita el acceso a la base de datos
 #' @param x objeto RODBC
+#' @examples
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' op <- db_open(ox)
+#' db_close(op)
 #' @return NULL
+#' @export
 db_close.RODBC <- function(x) {
     ww <- tryCatch(RODBC::odbcClose(x),
                    error = function(e) e)
@@ -270,6 +309,12 @@ db_close.RODBC <- function(x) {
 #' @description Es objeto RODBC?.
 #' @param x objeto RODBC
 #' @return logical
+#' @examples
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' op <- db_open(ox)
+#' is_rodbc(op)
+#' db_close(op)
 #' @export
 is_rodbc <- function(x) {
     inherits(x, "RODBC")
@@ -279,16 +324,29 @@ is_rodbc <- function(x) {
 #' @description Habilitado el acceso a la base de datos?
 #' @param x objeto RODBC
 #' @return logical
+#' @examples
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' op <- db_open(ox)
+#' is_open(op)
+#' db_close(op)
 #' @export
 is_open.RODBC <- function(x) {
-    !inherits(db_info(x), "try-error")
+    !inherits(db_info(x), "error")
 }
 
 #' Database info
 #' @description Información básica sobre la base de datos y el
 #'     "driver"
 #' @param x objeto RODBC
+#' @examples
 #' @return character
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' op <- db_open(ox)
+#' db_info(op)
+#' db_close(op)
+#' @export
 db_info.RODBC <- function(x) {
     ww <- tryCatch(RODBC::odbcGetInfo(x),
                    error = function(e) e)
@@ -298,10 +356,16 @@ db_info.RODBC <- function(x) {
 #' Tablas base de datos
 #' @description Nombres de las tablas en la base de datos.
 #' @details Simplifica el resultado de llamar la función
-#'     \code{sqlTables}
+#'     \code{sqlTables} de RODBC
 #' @param x objeto RODBC
 #' @param msg cuántas tablas? TRUE por defecto
 #' @return character o NULL
+#' @examples
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' op <- db_open(ox)
+#' db_tablas(op)
+#' db_close(op)
 #' @export
 db_tablas.RODBC <- function(x, msg = TRUE) {
     xx <- tryCatch(RODBC::sqlTables(x, tableType = "TABLE"),
@@ -321,23 +385,35 @@ db_tablas.RODBC <- function(x, msg = TRUE) {
 #' @description existe tabla en base de datos?
 #' @param x objeto RODBC
 #' @param tb character: nombre de tabla
+#' @return logical
+#' @examples
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' op <- db_open(ox)
+#' tabla.exists(op, "mydata")
+#' tabla.exists(op, "data")
+#' db_close(op)
 #' @export
 tabla_exists.RODBC <- function(x, tb = character()) {
-    stopifnot("arg. tb inadmisible" = filled_char(tb) &&
-              nzchar(tb))
+    stopifnot("arg. tb inadmisible" = is_scalar_name(tb))
     is.element(tolower(tb), tolower(db_tablas(x)))
 }
 
 #' Nombre de columnas
 #' @description Nombre de las columnas de una tabla en base de datos
 #' @details Simplifica el resultado que devuelve la función
-#'     \code{sqlColumns}
+#'     \code{sqlColumns} de RODBC
 #' @param x objeto RODBC
 #' @param tb character: nombre de la tabla
 #' @return character o NULL
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' op <- db_open(ox)
+#' db_columnas(op, "mydata")
+#' db_close(op)
 #' @export
 db_columnas.RODBC <- function(x, tb = character()) {
-    stopifnot("arg. tb inadmisible" = filled_char(tb) && nzchar(tb))
+    stopifnot("arg. tb inadmisible" = is_scalar_name(tb))
     xx <- tryCatch(RODBC::sqlColumns(x, tb),
                    error = function(e){
                        message("\n!!! ERROR")
@@ -360,11 +436,16 @@ db_columnas.RODBC <- function(x, tb = character()) {
 #'     sin límite, por defecto
 #' @param ... otros parámetros de \code{sqlGetResults}
 #' @return data.frame (invisible) o el mensaje de error
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' op <- db_open(ox)
+#' ww <- db_qry(op, "select mgp, cyl from mydata")
+#' db_close(op)
 #' @export
 db_qry.RODBC <- function(x, xs = character(), strfac = FALSE,
                          max = 0L, ...) {
-    stopifnot("arg. xs inadmisible" = filled_char(xs) &&
-                  is_scalar(xs) && nzchar(xs))
+    stopifnot("arg. xs inadmisible" = is_scalar(xs) &&
+                  filled_char(xs) && nzchar(xs))
     ww <- tryCatch(
         RODBC::sqlQuery(x, xs, errors = TRUE, stringsAsFactors = strfac,
                  max = max, ...),
@@ -391,11 +472,15 @@ db_qry.RODBC <- function(x, xs = character(), strfac = FALSE,
 #' @param ... otros parámetros de \code{sqlGetResults} o
 #'     \code{sqlQuery}
 #' @return data.frame (invisible) o el mensaje de error
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect"))
+#' op <- db_open(ox)
+#' ww <- db_fetch(op, "mydata")
+#' db_close(op)
 #' @export
 db_fetch.RODBC <- function(x, tb = character(), strfac = FALSE,
                            max = 0L, ...) {
-    stopifnot("arg. tb inadmisible" = filled_char(tb) &&
-                  is_scalar(tb) && nzchar(tb))
+    stopifnot("arg. tb inadmisible" = is_scalar_name(tb))
     
     ww <- tryCatch(RODBC::sqlFetch(x, tb, stringsAsFactors = strfac,
                             max = max, ...),
@@ -409,20 +494,27 @@ db_fetch.RODBC <- function(x, tb = character(), strfac = FALSE,
 
 #' Guardar tabla
 #' @description Guarda un data frame como una tabla de la base de
-#'     datos, mediante \code{sqlSave} de RODBC
+#'     datos mediante \code{RODBC::sqlSave}
 #' @param x ojeto RODBC
 #' @param df data.frame
 #' @param tb character: nombre de la tabla
 #' @param rn logical: agrega nombre de filas a la tabla? FALSE por
 #'     defecto
-#' @param ... adicionales para \code{sqlSave}
+#' @param ... adicionales para \code{RODBC::sqlSave}
 #' @return NULL o mensaje de error
+#' fi <- system.file("demofiles/mydata.xlsx", package =
+#' "XLConnect")
+#' ox <- db_xcl(fi)
+#' op <- db_open(ox)
+#' ww <- data.frame(x = 1:3, y = 3:1)
+#' ##NOT RUN !!
+#' # db_save(op, ww, "mydata")
+#' db_close(op)
 #' @export
 db_save.RODBC <- function(x, df, tb = character(),
                           rn = FALSE, ...) {
     stopifnot("arg. df inadmisible" = inherits(df, "data.frame"),
-              "arg. tb inadmisible" = filled_char(tb) &&
-                  is_scalar(tb) && nzchar(tb))
+              "arg. tb inadmisible" = is_scalar_name(tb))
     
     ww <- tryCatch(RODBC::sqlSave(x, df, tablename = tb,
                                   rownames = rn, ...),
@@ -439,10 +531,9 @@ db_save.RODBC <- function(x, df, tb = character(),
 #' @param x objeto RODBC
 #' @param tb character: nombre de la tabla
 #' @return NULL o mensaje de error
-#' @export
+#' @keywords internal
 db_drop.RODBC <- function(x, tb = character()) {
-    stopifnot("arg. tb inadmisible" = filled_char(tb) &&
-                  is_scalar(tb) && nzchar(tb))
+    stopifnot("arg. tb inadmisible" = is_scalar_name(tb))
     
     ww <- tryCatch(RODBC::sqlDrop(x, df),
                    error = function(e) e)
@@ -469,15 +560,19 @@ db_drop.RODBC <- function(x, tb = character()) {
 #' @param xv7 versión 7 de excel (xslx)? TRUE por defecto
 #' @return NULL
 #' @seealso save_cel_xcl
+#' @examples
+#' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
+#' ww <- data.frame(x = 1:3, y = 3:1)
+#' ## NOT RUN
+#' # save_xcl(ww, "mydata", fi)
 #' @export
 #' @author eddy castellón
 save_xcl <- function(x, tabla = character(), file = character(),
                      xv7 = TRUE) {
     stopifnot("arg. x inadmisible" = inherits(x, "data.frame"),
-              "arg. tabla inadmisible" = filled_char(tabla) &&
-                  is_scalar(tabla) && nzchar(tabla),
-              "arg. file inadmisible" = filled_char(file) &&
-                  is_scalar(file) && file.exists(file))
+              "arg. tabla inadmisible" = is_scalar_name(tabla),
+              "arg. file inadmisible" = is_scalar(file) &&
+                  file.exists(file))
     
     oo <- db_xcl(file, version7 = xv7, ronly = FALSE)
     kk <- db_open(oo)
@@ -498,12 +593,15 @@ save_xcl <- function(x, tabla = character(), file = character(),
 #' @return data.frame o NULL
 #' @seealso save_xcl
 #' @export
+#' @examples
+#' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
+#' ww <- read_xcl("mydata", fi)
 #' @author eddy castellón
 read_xcl <- function(x, file, xv7 = TRUE) {
     stopifnot("arg. x inadmisible" = filled_char(x) &&
                   is_scalar(x) && nzchar(x),
-              "arg. file inadmisible" = filled_char(file) &&
-                  is_scalar(file) && file.exists(file))
+              "arg. file inadmisible" = is_scalar(file) &&
+                  file.exists(file))
     oo <- db_xcl(file, version7 = xv7, ronly = FALSE)
     kk <- db_open(oo)
     if (is_rodbc(kk)){
@@ -516,16 +614,17 @@ read_xcl <- function(x, file, xv7 = TRUE) {
 }
 
 #' save-excel
-#' @description Almacena data.frame en celdas de un libro excel.
-#' @details Utiliza funciones de librería «XLConnect» para guardar los
-#'     datos de un data.frame en un rango de celdas que inicia en la
-#'     fila y columna indicadas en los argumentos, o la referencia a
-#'     la celda en la notación que se acostumbra en excel; eg. "A$1" o
-#'     "J$20". Si no se utiliza la referencia se deben indicar la fila
-#'     y columna; pero si se indica la referencia, los argumentos en
-#'     de fila y columna son ignorados. De acuerdo a la documentación,
-#'     el número máximo permitido de fila es 1048576, y 16384 el de
-#'     columna.
+#' @description Almacena data.frame en las celdas indicadas de un
+#'     libro excel.
+#' @details Utiliza funciones de la librería «XLConnect» para guardar
+#'     los datos de un data.frame en un rango de celdas que inicia en
+#'     la fila y columna indicadas en los argumentos, o la referencia
+#'     a la celda en la notación que se acostumbra en excel; eg. "A$1"
+#'     o "J$20". Si no se utiliza la referencia se deben indicar la
+#'     fila y columna; pero si se indica la referencia, los argumentos
+#'     en de fila y columna son ignorados. De acuerdo a la
+#'     documentación, el número máximo permitido de fila es 1048576, y
+#'     16384 el de columna.
 #'
 #'     Si no existe el archivo excel, este es creado; si ya existe y
 #'     hay datos en el rango indicado, estos son remplazados. Así
@@ -535,28 +634,33 @@ read_xcl <- function(x, file, xv7 = TRUE) {
 #'
 #'     La primera vez que se utiliza esta función, «XLConnect» crea
 #'     una "máquina virtual" para ejecutar una aplicación del lenguaje
-#'     Java. Para esto, debe estar instalado el
-#'     "Java Runtime Environment" o "JRE" en el sistema (generalmente
-#'     lo está, pero hay que verificar la versión). El parámetro
-#'     "free" (FALSE por defecto) es para pedir que se libere la
-#'     memoria utilizada por la máquina virtual. Lea la documentación
-#'     de «XLConnect» y los requerimientos del sistema con
-#'     \code{packageDescription("XLConnect")}.
+#'     Java, lo que demanda el "Java Runtime Environment" o "JRE"
+#'     (generalmente está instalado porque lo necesitan los "browser"
+#'     para ejecutar algunas aplicaciones, pero hay que verificar la
+#'     versión). El parámetro "free" (FALSE por defecto) es para pedir
+#'     que se libere la memoria utilizada por la máquina virtual. Lea
+#'     la documentación de «XLConnect» y los requerimientos del
+#'     sistema con \code{packageDescription("XLConnect")}.
 #' @param x data.frame
 #' @param file character: nombre del archivo
-#' @param hoja nombre (character) o número (numeric) de la hoja o
-#'     pestaña que recibirá los datos
 #' @param rfc character: referencia a celda excel.
 #' @param col integer: número de la columna; igual a 1 por omisión
 #' @param fila integer: número de la fila; igual a 1 por omisión
+#' @param hoja nombre (character) o número (numeric) de la hoja o
+#'     pestaña que recibirá los datos
 #' @param free logical: liberar memoria (TRUE); FALSE por omisión
 #' @return logical
 #' @seealso save_xcl
+#' @examples
+#' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
+#' ww <- read_cel_xcl(fi, "D$8", "E$12")
+#' ## NOT RUN
+#' # save_cel_xcl(ww, fi, "A$1")
 #' @export
-save_cel_xcl <- function(x, file = character(), hoja = 1L,
+save_cel_xcl <- function(x, file = character(),
                          rfc = character(),
                          col = 1L, fila = 1L,
-                         free = FALSE) {
+                         hoja = 1L, free = FALSE) {
     stopifnot(exprs = {
         inherits(x, "data.frame")
         filled_char(file) && is_scalar(file)
@@ -620,7 +724,7 @@ save_cel_xcl <- function(x, file = character(), hoja = 1L,
               silent = TRUE)
 
     if (free) {
-        xlcFreeMemory()
+        XLConnect::xlcFreeMemory()
     }
 
     ko <- inherits(tr, "try-error")
@@ -632,22 +736,27 @@ save_cel_xcl <- function(x, file = character(), hoja = 1L,
 }
 
 #' Leer-excel
-#' @description Lee datos en un rango de celdas de libro excel
+#' @description Lee los datos que están en un rango de celdas de un
+#'     libro excel
 #' @details Ver explicación en la ayuda de la función
 #'     \code{save_cel_xcl}
 #' @param file character: nombre del archivo
-#' @param hoja nombre (character) o número (numeric) de la hoja
-#' @param rf1 character: referencia de la celda superior izquierda
-#'     del rango; por omisión, "A$1"
+#' @param rf1 character: referencia de la celda superior izquierda del
+#'     rango; por omisión, "A$1"
 #' @param rf2 character: referencia de la celda inferior derecha del
 #'     rango
+#' @param hoja nombre (character) o número (numeric) de la hoja; por
+#'     omisión, 1
 #' @param free logical: TRUE para liberar memoria; FALSE por omisión
 #' @return data.frame o NULL
 #' @seealso save_cel_xcl
+#' @examples
+#' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
+#' ww <- read_cel_xcl(fi, "D$8", "E$12")
 #' @export
-read_cel_xcl <- function(file = character(), hoja = 1L,
+read_cel_xcl <- function(file = character(),
                          rf1 = "A$1", rf2 = character(),
-                         free = FALSE) {
+                         hoja = 1L, free = FALSE) {
     stopifnot("arg. file inadmisible" = filled_char(file) &&
                   is_scalar(file) && file.exists(file),
 
@@ -689,7 +798,7 @@ read_cel_xcl <- function(file = character(), hoja = 1L,
     }
 
     if (free) {
-        xlcFreeMemory()
+       XLConnect::xlcFreeMemory()
     }
 
     invisible(df)
@@ -822,8 +931,7 @@ xsql <- function(x = list(), whr = character(), ord = character(),
 #' xsql_s("a")
 #' #-> "select * from a"
 xsql_s <- function(x = character(), cm = "*") {
-    stopifnot("arg. inadmisibles" = filled_char(x) &&
-                  is_scalar(x) && nzchar(x) &&
+    stopifnot("arg. inadmisibles" = is_scalar_name(x) &&
                   filled_char(cm))
 
     if (!is_scalar(cm)) {
@@ -878,8 +986,7 @@ xsql_u <- function(x = character(), idc = seq_along(x),
         "arg. idc inadmisible" = is.character(idc) || is.numeric(idc)
         "arg. idc,cid inadmisible" = ifelse(is_vacuo(idc),
                                             is_vacuo(cid),
-                                            filled_char(cid) &&
-                                            is_scalar(cid) &&
+                                            is_scalar_name(cid) &&
                                             length(idc) == length(x))
     })
 
@@ -968,6 +1075,8 @@ xsql_u <- function(x = character(), idc = seq_along(x),
 #'     «union»).
 #' @return character
 #' @seealso xsql_u
+#' @examples
+#' xsql_t("segene", paste0("c", 121:126), c("cult", "semb", "per"))
 #' @export
 xsql_t <- function(x = character(), cam = character(),
                    nvb = character(), idr = "quest", xfi = TRUE,
@@ -999,48 +1108,6 @@ xsql_t <- function(x = character(), cam = character(),
     xsql_u(mk, idc, cid, all)
 }
 
-#' matriz de códigos
-#' @description construye una matriz de códigos a partir de un vector
-#'     de códigos, o a partir de un vector de enteros si la función
-#'     recibe la función que los construye.
-#' @param nn vector de enteros o de caracteres (códigos)
-#' @param nomcol nombre de las columnas de la matriz
-#' @param nomfi nombre de las filas
-#' @param por_fila la matriz se llenará¡ por fila por fila? TRUE por
-#'     defecto
-#' @param cod función que generará los códigos si el parámetro nn es
-#'     un vector de enteros
-#' @return matriz de códigos
-#' @export
-#' @examples
-#' ff <- codigo_fac(di = 3)
-#' xx <- matriz_cod(1:6, nomcol = c("x", "y", "z"), cod = ff)
-#' @importFrom assertthat assert_that
-matrix_cod <- function(nn, nomcol = NULL,
-                       nomfi = NULL, por_fila = TRUE, cod = NULL){
-    assert_that((is.numeric(nn) && is.function(cod)) ||
-                is.character(nn),
-                msg = "si entero falta funcion de codigos")
-
-    if (is.numeric(nn)){
-        nn <- cod(as.integer(nn))
-    }
-    
-    ncol <- length(nomcol)
-    if (!length(ncol)){
-        ncol <- length(nn)
-    }
-
-    ## if (!is.null(nomcol)){
-    ##     assert_that(length(nomcol) == ncol,
-    ##                 msg = "columnas inconsistente con nombres")
-    ## }
-
-    matrix(nn, ncol = ncol, byrow = por_fila,
-           dimnames = list(nomfi, nomcol))
-}
-
-
 #' Datos-encuesta
 #' @description Devuelve los datos que produce una consulta SQL, y de
 #'     manera opcional, filtra los datos no igual a cero, remplaza NA
@@ -1056,12 +1123,18 @@ matrix_cod <- function(nn, nomcol = NULL,
 #'     resultado. Todos por defecto.
 #' @param ... argumentos adicionales para la función quitar_0
 #' @return data.frame o NULL
+#' @examples
+#' fi <- system.file("demofiles/multiregion.xlsx", package =
+#' "XLConnect")
+#' ob <- db_xcl(fi)
+#' ww <- get_data(ob,
+#'          "select year, days from calendar where year < 2002")
 #' @export
 get_data.odb <- function(x, qstr = character(), meta = character(),
                          sin_0 = FALSE, na_0 = FALSE, max = 0, ...) {
     stopifnot("arg. qstr inadmisible" = filled_char(qstr) &&
                   is_scalar(qstr) && nzchar(qstr),
-              "arg. meta inadmisible" = is.character(),
+              "arg. meta inadmisible" = is.character(meta),
               "arg. max inadmisible" = filled_num(max) && is_scalar(max)
               )
 
