@@ -4,21 +4,6 @@
 
 #' factores
 #' @description Cálculo del factor de expansión
-#' @param x data.frame con los datos
-#' @param dfe data.frame con los datos de los estratos
-#' @param cob integer con los números de las columnas del data.frame x
-#'     utilizadas en el cálculo: departamento, estrato, superficie;
-#'     por omisión c(1, 2, 3).
-#' @param ces integer con los números de las columnas del data.frame
-#'     dfs, utilizadas en el cálculo: departamento, estrato,
-#'     sup. estrato, puntos en estrato; por omisión c(1, 2, 3, 4)
-#' @param tamu logical: calcular el número de observaciones en los
-#'     estratos y utilizarlos como el tamaño de la muestra?; FALSE por
-#'     omisión
-#' @param dec integer: número de decimales de los resultados
-#' @return vector numérico (double) con el factor de expansión o NULL
-#'     si no fue calculado
-#' @export
 #' @details El data.frame asociado al parámetro "x" tiene las columnas
 #'     que corresponden a las observaciones (cuestionarios): el
 #'     departamento (integer) y estrato (integer) a los que está
@@ -50,6 +35,22 @@
 #'     de nuevo, el factor que resulte sería válido sólo si los
 #'     "no contactos" estuvieran distribuidos aleatoriamente.
 #' 
+#' @param x data.frame con los datos de cuestionarios
+#' @param dfe data.frame con los datos de los estratos
+#' @param cob integer con los números de las columnas del data.frame x
+#'     utilizadas en el cálculo: departamento, estrato, superficie;
+#'     por omisión c(1, 2, 3).
+#' @param ces integer con los números de las columnas del data.frame
+#'     dfs, utilizadas en el cálculo: departamento, estrato,
+#'     sup. estrato, puntos en estrato; por omisión c(1, 2, 3, 4)
+#' @param tamu logical: calcular el número de observaciones en los
+#'     estratos y utilizarlos como el tamaño de la muestra?; FALSE por
+#'     omisión
+#' @param dec integer: número de decimales de los resultados
+#' @return double o NULL
+#' @examples
+#' \dontrun{w_pr(dfcues, dfestratos)}
+#' @export
 w_pr <- function(x, dfe, cob = seq.int(3), ces = seq.int(4),
                      tamu = FALSE, dec = 6L) {
     
@@ -175,31 +176,38 @@ w_nr <- function(x, cnr, qsr, qnr, dec = 4L) {
 }
 
 #' Puntos UP
-#' @description Prepara el data.frame con los datos de los puntos, su
-#'     ubicación geográfica (departamento, municipio) y el estrato
-#' @details Hay un archivo maestro con los datos de todos los puntos
-#'     de la encuesta, construido durante el diseño de la muestra:
-#'     «nombre» o «id» del punto, departamento, municipio y estrato al
-#'     cual está asignado; y además, en un esquema de rotación de la
-#'     muestra, si el punto está incluido o no en la muestra de un mes
-#'     particular. Esta función lo que hace es seleccionar de ese
-#'     "conjunto maestro" (parámetro "dfp"), los datos de
-#'     departamento, municipio y estrato que corresponden a los que
-#'     están entre las observaciones registradas en la base de datos
-#'     de la encuesta del mes (parámetro "dfq"); y de paso comprueba
-#'     si los «id» de las observaciones están entre los del
-#'     "conjunto maestro".
-#' @param dfq data.frame con los datos de cuestionario (observaciones)
-#' @param dfp data.frame con los datos de la ubicación y el estrato al
-#'     cual están asignados los puntos de la muestra actual (del mes).
+#' @description Prepara el data.frame con los datos de departamento,
+#'     municipio y estrato de los puntos en la muestra
+#' @details Hay un archivo «maestro» construido durante el diseño de
+#'     la muestra (arg. parám. "dfp") con los datos de todos los
+#'     puntos de la encuesta; este contiene: «nombre» o «id» del
+#'     punto, departamento, municipio y estrato al cual está asignado
+#'     cada punto. Si hubiera algún un esquema de rotación de la
+#'     muestra y no todos los puntos forman parte de la actual
+#'     selección, el arg. al parám. "dfp" debe haber sido previamente
+#'     filtrado para que contenga sólo los que correspondan. Esto
+#'     permite validar los datos por esa variable.
+#' 
+#'     Esta función lo que hace es adjuntar a los registros del
+#'     data.frame que se pasa como arg. al parám. "dfq" los datos de
+#'     departamento, municipio y estrato que están en el
+#'     arg. parám. "dfp".
+#' @param dfq data.frame con los datos de las observaciones leídas de
+#'     la base de datos
+#' @param dfp data.frame "maestro" con los datos de la ubicación y el
+#'     estrato al cual están asignados los puntos de la muestra actual
+#'     (la del mes).
 #' @param cues character: columna con los números de cuestionario o
 #'     punto. El tipo de datos en la columna debe ser integer.
-#' @param cdpt character: columna con los códigos del departamento
-#' @param cmun character: columna con el código del municipio
-#' @param cest character: columna con el código del estrato
+#' @param cdpt character: nombre columna con los códigos del
+#'     departamento
+#' @param cmun character: nombre columna con el código del municipio
+#' @param cest character: nombre columna con el código del estrato
 #' @return data.frame
 #' @examples
-#' 
+#' \dontrun{
+#' df_pto(dfcues, dfpuntos)
+#' }
 #' @export
 df_pto <- function(dfq, dfp, cues = "quest", cdpt = "dpt",
                    cmun = "mun", cest = "estrato") {
@@ -213,7 +221,7 @@ df_pto <- function(dfq, dfp, cues = "quest", cdpt = "dpt",
     
     cc <- names(dfq)
     nn <- nrow(dfq)
-    
+
     dfq %<>% inner_join(dfp, by = cues)
     nr <- nrow(dfq)
     stopifnot("sin datos" = nr > 0)
@@ -243,20 +251,23 @@ df_pto <- function(dfq, dfp, cues = "quest", cdpt = "dpt",
 #'     opcional.
 #' @param dfq data.frame con los datos de cuestionario, de origen de
 #'     duplicados, control de cuestionario y, si acaso, superficie
-#' @param cues character: columna con los números de cuestionario
-#' @param cdup character: columna con el origen de las duplicadas
-#' @param ccon character: columna con el código de control
+#' @param cues character: nombre columna con los números de
+#'     cuestionario
+#' @param cdup character: nombre columna con el origen de las
+#'     duplicadas
+#' @param ccon character: nombre columna con el código de control
 #' @param qres códigos de control de los cuestionarios con datos de
 #'     superficie (p.ej. de cuestionario completo o incompleto)
-#' @param csup character: columna con los datos de superficie
+#' @param csup character: nombre columna con los datos de superficie
 #' @param dft data.frame con los datos de cuestionario y superficie,
 #'     si es que ese dato no está en el data.frame referenciado con el
 #'     parámetro "dfq"
 #' @return data.frame
 #' @examples
+#' \dontrun{
 #' df_sup(x, "quest", "duplicada", "c040", "c5000", c(1, 3), y)
 #' df_sup(x, cues = "quest", cdup = "duplicada", csup = "c040",
-#'              ccon = "c5000", qres = c(1, 3))
+#'              ccon = "c5000", qres = c(1, 3))}
 #' @export
 df_sup <- function(dfq, cues = "quest", cdup = "copiade",
                    ccon = "c5000", qres, csup, dft) {
@@ -303,25 +314,30 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
 #' @details Prepara el data.frame con los datos necesarios para llamar
 #'     las funciones w_pr y w_nr que calculan el factor de expansión y
 #'     los ajustes por no respuesta. El data.frame que sirve de base
-#'     es el referido con el parámetro "dfq". Los data.frame dft y dfp
-#'     son opcionales si es que "dfq" contiene todas las columnas en
-#'     la lista de parámetros. La función llama las funciones
-#'     preparar_pto y preparar_sup.
+#'     es el referido con el parámetro "dfq". Los arg. a los
+#'     parámetros "dft" y "dfp" son opcionales si es que arg. "dfq"
+#'     contiene todas las columnas en la lista de parámetros. Si se
+#'     pasa arg. al parámetro "dfp", este debe corresponder a los
+#'     puntos de la muestra actual; es decir, debe haberse filtrado
+#'     antes si hubiera algún esquema de rotación de la muestra.
+#'
+#'     La función llama las funciones preparar_pto y preparar_sup.
 #' @param dfq data.frame con los datos de código de cuestionario,
 #'     control de llenado y control de copia
-#' @param dfp data.frame con los datos de ubicación de los puntos
-#'     (departamento y municipio) y su asignación a los estratos
+#' @param dfp data.frame con los datos de departamento, municipio y
+#'     estrato a los que están asignados los puntos de la muestra. Es
+#'     opcional (vea detalles).
+#' @param qres character o numeric: códigos de control de llenado de
+#'     los cuestionarios que pueden tener datos de superficie mayor
+#'     que cero; p.ej. los con código "completo" o "incompleto"
+#' @param ccon character: nombre de la columna con los datos de código
+#'     de control de llenado. Por omisión "c5000".
 #' @param cues character: nombre de columna con el número de
 #'     cuestionario; por omisión, "quest"
 #' @param cdup character: nombre de columna con el número de
 #'     cuestionario "origen". El dato debe ser NA si el cuestionario
 #'     no es "copia", o el número del cuestionario "origen" en caso
 #'     contrario. Por omisión, "copiade".
-#' @param ccon character: nombre de la columna con los datos de código
-#'     de control de llenado. Por omisión "c5000".
-#' @param qres character o numeric: códigos de control de llenado de
-#'     los cuestionarios que pueden tener datos de superficie mayor
-#'     que cero; p.ej. los con código "completo" o "incompleto"
 #' @param cdpt character: nombre de la columna con los datos de los
 #'     departamentos a los que están asignados los cuestionarios. Por
 #'     omisión "dpt".
@@ -331,16 +347,21 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
 #' @param cest character: nombre de la columna con el código del
 #'     estrato. Por omisión, "est".
 #' @param csup numeric: nombre de la columna con los datos de
-#'     supuerficie de la unidad de producción. Por omisión, "sup"
-#' @param dft data.frame con los datos de superficie de la tierra
-#' @return data.frame con los datos de número de cuestionario y el
-#'     respectivo código de control de llenado, departamento,
-#'     municipio, estrato y superficie de la unidad de producción
+#'     superficie de la unidad de producción. Por omisión, "sup"
+#' @param dft data.frame con los datos de superficie de la unidad de
+#'     producción. Es opcional (vea detalles)
+#' @return data.frame
+#' @seealso preparar_pto, preparar_sup
+#' @examples
+#' \dontrun{
+#' df_fxp(dfobs, dfpun, c("completo", "incompleto"))
+#' df_fxp(dfobs, dfpun, c(1, 3))
+#' }
 #' @export
 #' 
-df_fxp <- function(dfq, cues = "quest", cdup = "copiade",
-                   ccon = "c5000", qres, cdpt = "dpt", cmun = "mun",
-                   cest = "est", csup = "sup", dfp, dft) {
+df_fxp <- function(dfq, dfp, qres, ccon = "c5000", cues = "quest",
+                   cdup = "copiade", cdpt = "dpt", cmun = "mun",
+                   cest = "est", csup = "sup", dft) {
     ## revisión
     stopifnot(exprs = {
         inherits(dfq, "data.frame")
@@ -380,5 +401,70 @@ df_fxp <- function(dfq, cues = "quest", cdup = "copiade",
 
     message("\n... registros para cálculo de factor: ", nrow(wq))
     invisible(wq)
+}
+
+## -- estimados --
+
+#' pct-estima
+#' @description Contribución al total de los datos ponderados
+#' @param x numeric: datos
+#' @param wb numeric: ponderación base (factor)
+#' @param wa numeric: ponderación adicional; 1 por omisión
+#' @param dec integer: decimales; por omisión 0
+#' @return real
+#' @examples
+#' pct_total(1:3, c(0.3, 0.3, 0.4))
+#' @export
+pct_w <- function(x = numeric(), wb = numeric(),
+                      wa = 1L, dec = 0L) {
+
+    stopifnot("arg. inadmisible" = filled_num(x) &&
+                  filled_num(wb) && length(x) == length(wb),
+              "arg. inadmisible" = filled_num(wa) &&
+                  (is_scalar(wa) || (length(wa) == length(wb))),
+              "arg. inadmisible" = filled_num(dec) &&
+                  is_scalar(dec)
+              )
+    
+    pct(x * wb * wa, dec)
+}
+
+pct_w_gr <- function(x = numeric(), gr = numeric(),
+                         wb = numeric(), ...) {
+    stopifnot("arg. inadmisible" = filled_num(x) &&
+                  filled_num(wb) && length(x) == length(wb),
+              "arg. gr inadmisible" = (filled_num(gr) ||
+                                       filled_char(gr)) &&
+                  length(gr) == length(x)
+              )
+    
+}
+
+## -- outliers --
+
+## prop.: remplazar outliers por una media robusta
+##  sig.: vec. double, vec. integer, double, function -> vec. double
+##     x: los datos
+##  cota: x > cota -> outlier
+##   fun: la func. media robusta con param. fijados de modo que x sea
+##        la única variable cuando sea invocada; p.ej. si media
+##        podada, trimm ya iniciado: p.ej.
+##        partial(f, trim = 0.1, na.rm = TRUE)
+##   msj: mensaje con indicadores?
+##   ...: pasados a fun
+## cond.: size(x) = size(id) = size(result); fun con param. fijos.
+replace_outlier <- function(x, cota = 0.0, fun, msj = FALSE, ...){
+    if (any(ii <- x >= cota)) {
+        nn <- sum(ii, na.rm = TRUE)
+        if (msj) {
+            message("\n !!!extremos: ", nn, " pct.: ",
+                    round(100 * nn / sum(!is.na(x)), 1L))
+        }
+        ## excluir o no los outliers de llamado func.?
+        ## asegurar que quedan suficientes para cálculo
+        ## sum(!ii) > cierto número
+        x[which(ii)] <- fun(x, ...) #which por si NA en x
+    }
+    invisible(x)
 }
 

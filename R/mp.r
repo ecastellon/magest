@@ -564,7 +564,7 @@ db_drop.RODBC <- function(x, tb = character()) {
 #' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
 #' ww <- data.frame(x = 1:3, y = 3:1)
 #' ## NOT RUN
-#' # save_xcl(ww, "mydata", fi)
+#' \dontrun{save_xcl(ww, "mydata", fi)}
 #' @export
 #' @author eddy castellón
 save_xcl <- function(x, tabla = character(), file = character(),
@@ -655,7 +655,7 @@ read_xcl <- function(x, file, xv7 = TRUE) {
 #' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
 #' ww <- read_cel_xcl(fi, "D$8", "E$12")
 #' ## NOT RUN
-#' # save_cel_xcl(ww, fi, "A$1")
+#' \dontrun{save_cel_xcl(ww, fi, "A$1")}
 #' @export
 save_cel_xcl <- function(x, file = character(),
                          rfc = character(),

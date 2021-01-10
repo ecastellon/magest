@@ -116,15 +116,16 @@ quitar_0 <- function(x, excepto) UseMethod("quitar_0")
 
 #' quitar ceros
 #' @description Elimina las filas de un data.frame que tienen cero en
-#'     todas las columnas de modo numeric (excepto las indicadas).
+#'     todas las columnas de modo numeric, excepto en las columnas
+#'     indicadas.
 #' @param df data.frame
 #' @param excepto nombre (character) o posición (numeric) de las
 #'     columnas de modo numeric que serán ignoradas
 #' @return data.frame
 #' @examples
-#' quitar_0(ww, excepto="quest") -> data.frame sin los registros donde
-#'     todas las columnas (exceptuando la nombrada "quest") llevan
-#'     dato = 0
+#' aa <- data.frame(x = 1:5, y = c(0, 0, 0, 1, 1),
+#'                  z = c(5, 0, 0, 2, 0))
+#' (quitar_0(aa, excepto = "x"))
 #' @export
 #' @author eddy castellón
 quitar_0.data.frame <- function(df, excepto = character()) {
@@ -161,57 +162,40 @@ quitar_0.data.frame <- function(df, excepto = character()) {
 
 ##--- strings ---
 
-##' Anidar entre caracter
-##' @description
-##'     A una cadena de caracteres le agrega, al inicio y al final, un
-##'     caracter, p.ej. para encerrar entre paréntesis. La
-##'     implementación es recursiva cuando se aplica a un vector de
-##'     caracteres
-##' @param x vector tipo character
-##' @param cc vector con los caracteres delimitadores; "()" por default
-##' @return string
-##' @export
-##' @examples
-##' nest_str(c("aa", "bb", "cc")) -> "aa(bb(cc))"
-##' nest_str(c("aa", "bb"), c("[", "]")) -> "aa[bb]"
-##' nest_str(c("", "bb"), c("[", "]")) -> "[bb]"
-nest_str <- function(x, cc = c("(", ")")) {
-    if (length(x) == 1) {
-        x
-    } else {
-        paste0(x[1], cc[1], nest_str(x[-1], cc), cc[2])
-    }
+#' Separar palabras
+#' @description Produce un vector con las palabras (token) que se
+#'     encuentran en una ristra de caracteres, separadas unas de otras
+#'     por espacios o coma
+#' @param str character: palabras encerradas por comillas separadas
+#'     por coma o espacios
+#' @return character
+#' @export
+#' @examples
+#' tok_str("aa bb,cc") #-> c("aa", "bb", "cc")
+#' @author eddy castellón
+tok_str <- function(str){
+    strsplit(str, split="[[:space:],]+")[[1L]]
 }
 
 #' fabrica código
-#' @description Produce función que genera nombres de variables
-#'     encuesta
-#' @param x parámetro para la parte entera del código
-#' @param di numeric: dígitos que componen el código; 3 por defecto
+#' @description Produce función que genera palabras con prefijo y
+#'     enteros.
+#' @details Crea una función que produce un objeto character con
+#'     prefijo único indicado en parámetro "prf" (por omisión "c"),
+#'     seguido por un entero (parámetro "x") antecedido por
+#'     suficientes ceros para llenar tantos espacios como se indique
+#'     en el parámetro "di"
+#' @param x integer: el entero que complementa el prefijo
+#' @param prf character: prefijo; "c" por defecto
+#' @param di integer: dígitos que componen el código; 3 por defecto
 #' @return función
-#' @seealso codigo
 #' @export
 #' @examples
 #' ff <- codigo_fac(di = 4)
 #' ff(4) #-> "c0004"
 #' ff(c(20, 100)) #-> c("c0020", "c0100")
-codigo_fac <- function(x, di = 3){
-    function(x) sprintf(paste0("%s%0", di, "i"), "c", x)
-}
-
-#' Variable-nombre
-#' @description Produce nombre genérico de variable usadas en encuesta
-#' @details Crea un objeto character con prefico "c", seguido por un
-#'     entero (parámetro "x") antecedido por suficientes ceros para
-#'     llenar tantos espacios como indique el parámetro "di"
-#' @param x integer: parte entera del código
-#' @param di integer: número de dígitos en el código; 3 por defecto
-#' @return character
-#' @export
-#' @examples
-#' codigo(100, 4) -> "c0100"
-codigo <- function(x, di = 3){
-    sprintf(paste0("%s%0", di, "i"), "c", x)
+codigo_fac <- function(x, prf = "c", di = 3) {
+    function(x) sprintf(paste0("%s%0", di, "i"), prf, x)
 }
 
 ##--- files ---
@@ -247,11 +231,178 @@ ok_fname <- function(x = character()) {
 #'     numérico
 #' @param x numeric
 #' @return numeric
+#' @examples
+#' na0(c(1:3, NA_integer_))
 #' @export
 na0 <- function(x) {
     if (is.numeric(x)) {
         x[is.na(x)] <- ifelse(typeof(x) == "integer", 0L, 0.0)
     }
+    invisible(x)
+}
+
+#' Número-entre
+#' @description Comprueba si un número está entre los límites de un
+#'     intervalo
+#' @param x numeric
+#' @param x1 numeric: límite inferior
+#' @param x2 numeric: límite superior
+#' @param inclusive logical: con igualdad a uno de los límites?; FALSE
+#'     por omisión
+#' @return logical
+#' @examples
+#' num_entre(2, 1, 2, TRUE)
+#' num_entre(2, 1, 2)
+#' @export
+num_entre <- function(x, x1 = numeric(), x2 = numeric(),
+                      inclusive = FALSE) {
+    stopifnot("arg. x inválido" = filled_num(x),
+              "arg. x1 inválido" = filled_num(x1),
+              "arg. x2 inválido" = filled_num(x2),
+              "args. x, x1 incomp" = length(x) == length(x1),
+              "args. x, x2 incomp" = length(x) == length(x2))
+    
+    tf <- x > x1 & x < x2
+    if (inclusive) {
+        tf  <- tf | x == x1 | x == x2
+    }
+
+    tf
+}
+
+#' porcentaje
+#' @description Porcentaje c.r.a base
+#' @param x numeric
+#' @param base numeric: base (un escalar) del porcentaje; por omisión,
+#'     la suma de los datos ignorando datos NA
+#' @param dec integer: número de decimales; por omisión, cero
+#' @return numeric
+#' @examples
+#' pct(2, 3)
+#' pct(1:3, 3)
+#' pct(1:3)
+#' \dontrun{
+#' pct(1:3, 3:1) #-> error
+#' }
+#' @export
+#' @author eddy castellón
+pct <- function(x = numeric(), base = numeric(), dec = 0L) {
+
+    stopifnot("arg. inadmisible" = filled_num(x) &&
+                  (is_scalar(base) || is_vacuo(base)) &&
+                  is.numeric(base))
+    
+    if (is_vacuo(base)) {
+        base <- sum(x, na.rm = TRUE)
+    }
+
+    if (base == 0 || is.na(base)) {
+        pp <- NA_real_
+        warning("base es igual a cero")
+    } else {
+        pp <- round((100 * x) / base, dec)
+    }
+    pp
+}
+
+#' fracción
+#' @description Calcula el cociente y redondea.
+#' @details Los argumentos a los parámetros deben contener el mismo
+#'     número de elementos o si difieren uno (numerador o denominador)
+#'     debe ser un escalar. Donde el resultado es infinito, devuelve
+#'     NA.
+#' @param x numeric: numerador
+#' @param y numeric: denominador
+#' @param dec integer: decimales en el resultado
+#' @return double o NA
+#' @examples
+#' frac(2, 3)
+#' frac(1:3, 3)
+#' frac(1:3, 3:1)
+#' \dontrun{
+#' frac(1:3, 1:2) #-> error
+#' }
+#' @export
+#' @author eddy castellón
+frac <- function(x = double(), y = double(), dec = 2L) {
+    stopifnot("arg. no numerico" = filled_num(x) && filled_num(y),
+              "arg. difiere longitud" = length(x) == length(y) ||
+                  (length(x) > 1 && length(y) == 1) ||
+                  (length(x) == 1 && length(y) > 1))
+
+    r <- round(x / y, dec)
+    r[is.infinite(r)] <- NA_real_
+    r
+}
+
+
+#' buscar-remplazar
+#' @description Busca elementos de un vector en otro, y remplaza con
+#'     otro donde haya un match.
+#' @details Hace un match del arg. 'busca' en el arg. 'buscaen'. Los
+#'     elementos del arg. 'remplazo' donde la función match no
+#'     devuelva NA, remplazan los correspondientes del arg. 'x'. El
+#'     número de elementos del arg. 'x' debe ser igual al del
+#'     arg. 'busca', y los del arg. 'buscaen' a los del
+#'     arg. 'remplazo'. El modo del arg. 'x' debe ser igual al de
+#'     'remplazo' (excepto cuando arg. 'x' es objeto NULL), y el modo
+#'     del arg. 'busca' al de 'buscaen'.
+#'
+#'     El arg. 'x' es NULL por omisión. En este caso arg. 'x' se
+#'     inicializa a vector con igual número de elementos de
+#'     arg. 'busca' y mismo modo que arg. 'remplazo'. Los elementos de
+#'     arg. 'x' son ceros o NA, según lo diga el arg. 'toNA'. Son NA
+#'     si arg. 'toNA' es TRUE (por omisión).
+#' @param x vector o NULL (por omisión)
+#' @param busca vector con los elementos a buscar
+#' @param buscaen vector donde se buscan los elementos
+#' @param remplazo vector con los elementos que remplazarán los
+#'     correspondientes en 'x'
+#' @param msg TRUE por omisión; FALSE suprime mensajes de advertencia
+#' @param toNA logical: TRUE por omisión.
+#' @return vector
+#' @examples
+#' x <- letters[1:4]
+#' y <- 8:1
+#' z <- letters[1:8]
+#' (remplazar(busca = x, buscaen = z, remplazo = y))
+#' w <- 1:4
+#' (remplazar(w, x, z, y))
+#' @export
+#' @author eddy castellón
+remplazar <- function(x = NULL, busca, buscaen, remplazo,
+                      msg = TRUE, toNA = TRUE) {
+
+    stopifnot(expres = {
+        "arg. incompat." = filled(buscaen) && filled(remplazo) &&
+            length(buscaen) == length(remplazo)
+        "arg. incompat." = filled(busca) &&
+            mode(busca) == mode(buscaen)
+        "arg. x inadmisible" = is.null(x) ||
+            (length(x) == length(busca) &&
+             mode(x) == mode(remplazo))
+    })
+
+    if (is.null(x)) {
+        x <- vector(mode(remplazo), length(busca))
+        if (toNA) {
+            is.na(x) <- seq_along(x)
+        }
+    }
+
+    mm <- match(busca, buscaen, nomatch = NA, incomparables = NULL)
+    ii <- !is.na(mm)
+    if (any(!ii) && msg) {
+        warning("\n... ", sum(ii), " no se encuentran ...")
+    }
+
+    if (any(ii)) {
+        x[ii] <- remplazo[mm[ii]]
+        if (msg) {
+            message("... ", sum(ii), " remplazos !!")
+        }
+    }
+    
     invisible(x)
 }
 
