@@ -405,66 +405,200 @@ df_fxp <- function(dfq, dfp, qres, ccon = "c5000", cues = "quest",
 
 ## -- estimados --
 
-#' pct-estima
-#' @description Contribución al total de los datos ponderados
-#' @param x numeric: datos
-#' @param wb numeric: ponderación base (factor)
-#' @param wa numeric: ponderación adicional; 1 por omisión
-#' @param dec integer: decimales; por omisión 0
-#' @return real
-#' @examples
-#' pct_total(1:3, c(0.3, 0.3, 0.4))
+#' calibración
+#' @description Factor para ajustar factores de expansión.
+#' @details La función calcula la división que tiene por numerador un
+#'     valor determinado (se supone que un total conocido de la
+#'     población) y por denominador la suma (descartando los NA) de
+#'     los datos (arg. "x") ponderados por las correspondientes
+#'     ponderaciones (arg. "factor"). Si los factores se multiplican
+#'     por este cociente, la suma de los datos ponderados por las
+#'     factores así ajustados, será igual (dentro de los límites de
+#'     precisión que caben) al valor utilizado como constante de
+#'     calibración.
+#' @param x numeric: los datos de la variable por la cual se calibra
+#' @param factor numeric: el factor de expansión
+#' @param totpob numeric: escalar con la constante c.r.a la que se
+#'     calibra
+#' @param dec integer: número de decimales del resultado; 6 por
+#'     omisión
+#' @return numeric escalar
 #' @export
-pct_w <- function(x = numeric(), wb = numeric(),
-                      wa = 1L, dec = 0L) {
-
+#' @author eddy castellón
+w_calibra <- function(x, factor, totpob = numeric(), dec = 6L) {
     stopifnot("arg. inadmisible" = filled_num(x) &&
-                  filled_num(wb) && length(x) == length(wb),
-              "arg. inadmisible" = filled_num(wa) &&
-                  (is_scalar(wa) || (length(wa) == length(wb))),
-              "arg. inadmisible" = filled_num(dec) &&
-                  is_scalar(dec)
-              )
-    
-    pct(x * wb * wa, dec)
+                  filled_num(factor),
+              "arg. inadmisible" = is_scalar(totpob) &&
+                  filled_num(totpob))
+
+    te <- totpob / sum(x * factor, na.rm = TRUE)
+    if (!is.finite(te)) {
+        te <- 1.0
+    }
+    round(te, dec)
 }
 
-pct_w_gr <- function(x = numeric(), gr = numeric(),
-                         wb = numeric(), ...) {
-    stopifnot("arg. inadmisible" = filled_num(x) &&
-                  filled_num(wb) && length(x) == length(wb),
-              "arg. gr inadmisible" = (filled_num(gr) ||
-                                       filled_char(gr)) &&
-                  length(gr) == length(x)
-              )
-    
+#' calibra - estrato
+#' @description Calibra las ponderaciones por grupo.
+#' @details Aplica la función \code{w_calibra} a datos agrupados. Por
+#'     ejemplo para calibrar las ponderaciones por superficie de los
+#'     estratos de un departamento, los grupos serían los estratos.
+#'
+#'     El arg. "dfo" debe tener las columnas con los datos de la
+#'     variable de calibración (p.ej. superficie), del grupo al que
+#'     pertenece el dato (p.ej. estrato) y de las ponderaciones
+#'     iniciales. La posición o nombre de esas columnas se pasa en el
+#'     arg. "cob" en el orden: variable calibración, grupo y
+#'     ponderación. El arg. "dfg" es el data frame con los datos de
+#'     los grupos: una columna con el dato que identifica al grupo
+#'     (p.ej. estrato) y otra con el valor correspondiente al grupo
+#'     (p.ej. superficie del estrato). La posición o nombre de las
+#'     columnas se pasa en el arg. "cgr" en el orden: grupo, valor del
+#'     grupo.
+#'
+#'     La función devuelve el arg. "dfo" con la columna adicional «wc»
+#'     en la que están los factores de calibración.
+#' @seealso w_calibra
+#' @param dfo data.frame: datos de las observaciones (vea detalles)
+#' @param dfg data.frame: datos de los grupos (vea detalles)
+#' @param cob numeric o character: posición (integer) o nombre
+#'     (character) de las columnas de datos (vea detalles); por
+#'     omisión \code{1:3}.
+#' @param cgr numeric o character: posición (integer) o nombre
+--#'     (character) de la columna que identifica al grupo y el valor
+#'     correspondiente al grupo (vea detalles); por omisión \code{1:2}
+#' @param dec integer: número de decimales en la ponderación; 6 por
+#'     defecto
+#' @return data.frame
+#' @export
+#' @author eddy castellón
+w_estrato <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
+
+    stopifnot(exprs = {
+        "arg. inadmisible" = inherits(dfo, "data.frame") &&
+            inherits(dfg, "data.frame")
+        "arg. inadmisible" = nrow(dfg) > 0 && nrow(dfo) > nrow(dfg)
+        "arg. inadmisible" = ncol(dfo) > 2 && ncol(dfg) > 1
+
+        "arg. inadmisible" = length(cob) == 3 &&
+            ((filled_char(cob) && all(is.element(cob, names(dfo)))) ||
+            (filled_num(cob) && all(cob <= ncol(dfo))))
+        
+        "arg. inadmisible" = length(cgr) == 2 &&
+            ((filled_char(cgr) && all(is.element(cgr, names(dfg)))) ||
+            (filled_num(cgr) && all(cgr <= ncol(dfg))))
+        
+        "arg. inadmisible" = is_scalar(dec) && filled_num(dec)
+    })
+
+    if (is.character(cob)) {
+        cob <- which(is.element(names(dfo), cob))
+    }
+    if (is.character(cgr)) {
+        cgr <- which(is.element(names(dfg), cgr))
+    }
+
+    go <- dfo[[cob[2]]]
+    gr <- dfg[[cgr[1]]]
+    stopifnot("grupos incomp." = all(is.element(go, gr)))
+
+    ww <- split(dfo, go, drop = TRUE)
+    xx <- split(dfg, gr, drop = TRUE)
+    ff <- function(x, y) {
+        w_calibra(x[cob[1]], x[cob[3]], y[cgr[2]], dec) 
+    }
+    wc <- Map(ff, ww, xx) %>% c(recursive = TRUE)
+
+    nn <- table(go)
+    cbind(dfo, wc = rep(wc, nn))
 }
 
 ## -- outliers --
 
-## prop.: remplazar outliers por una media robusta
-##  sig.: vec. double, vec. integer, double, function -> vec. double
-##     x: los datos
-##  cota: x > cota -> outlier
-##   fun: la func. media robusta con param. fijados de modo que x sea
-##        la única variable cuando sea invocada; p.ej. si media
-##        podada, trimm ya iniciado: p.ej.
-##        partial(f, trim = 0.1, na.rm = TRUE)
-##   msj: mensaje con indicadores?
-##   ...: pasados a fun
-## cond.: size(x) = size(id) = size(result); fun con param. fijos.
-replace_outlier <- function(x, cota = 0.0, fun, msj = FALSE, ...){
-    if (any(ii <- x >= cota)) {
-        nn <- sum(ii, na.rm = TRUE)
+#' outlier-estimado
+#' @description Identifica las observaciones cuyo aporte al total es
+#'     «extremo» de acuerdo a la cota arg. "pct".
+#' @details Devuelve un data.frame con los datos «extremos» y el
+#'     número de observaciones involucradas en el cálculo del total.
+#' @param x numeric: las observaciones
+#' @param id numeric o character: «id» de las observaciones
+#' @param by numeric, character o factor: variable de agrupamiento
+#' @param cota numeric escalar: cota superior al porcentaje de la
+#'     contribución; por omisión, 10
+#' @return lista de data.frame
+#' @examples
+#' aa <- data.frame(x = 1:5, y = c(2000, 1, 2, 2, 1000),
+#'                  z = c("a", "a", "a", "b", "b"))
+#' aporte_extremo(aa$y, aa$x, aa$z)
+#' @export
+aporte_extremo <- function(x, id, by = integer(), cota = 10L) {
+    stopifnot("arg. inadmisible" = filled_num(x),
+              "arg. inadmisible" = filled(id) &&
+                  length(id) == length(x),
+              "arg. inadmisible" = is_scalar0(by) ||
+                  length(by) == length(x),
+              "arg. inadmisible" = is_scalar(cota) && cota < 100)
+
+    ap <- aporte(x, by)
+    
+    if (is_scalar0(by)) {
+        nn <- list(length(x))
+        ob <- list(id)
+    } else {
+        nn <- tapply(x, by, length, simplify = FALSE)
+        ob <- tapply(id, by, identity, simplify = FALSE)
+    }
+
+    ae <- Map(function(x, y) {
+        ii <- x > cota
+        data.frame(id = y[ii], pct = x[ii])}, ap, ob)
+    
+    Map(function(x, y) cbind(x, n = y), ae, nn)
+}
+
+#' outlier
+#' @description Remplaza outlier
+#' @details Sustituye los datos que son mayores (menores) que
+#'     arg. "cota", por los producidos por arg. "fun". La alternativa
+#'     mayor (menor) que arg. "cota" la determina el arg. "mayor". La
+#'     función no verifica los argumentos pasados a la función en
+#'     pmt. "..."; cualquier error lo identifica la función en
+#'     cuestión, y en tal caso, los datos no son modificados.
+#' @param x numeric: los datos
+#' @param cota numeric escalar: cota
+#' @param fun function: función que devuelve sustituto de outlier
+#' @param mayor logical: cota es cota superior? TRUE por omisión.
+#' @param msj logical: un mensaje con indicadores?; FALSE por omisión
+#' @param ... argumentos pasados a fun
+#' @return numeric, invisible
+#' @examples
+#' (remplazar_outlier(c(200, 1:5, 1000), 100, mean, trim=0.1))
+#' @export
+remplazar_outlier <- function(x, cota = 0.0, fun, mayor = TRUE,
+                              msj = FALSE, ...) {
+    stopifnot("arg. inadmisible" = filled_num(x),
+              "arg. inadmisible" = is.function(fun),
+              "arg. inadmisible" = filled_num(cota) &&
+                  is_scalar(cota))
+
+    if (mayor) {
+        ii <- x > cota
+    } else {
+        ii <- x < cota
+    }
+    
+    if (any(ii)) {
         if (msj) {
+            nn <- sum(ii, na.rm = TRUE)
             message("\n !!!extremos: ", nn, " pct.: ",
                     round(100 * nn / sum(!is.na(x)), 1L))
         }
-        ## excluir o no los outliers de llamado func.?
-        ## asegurar que quedan suficientes para cálculo
-        ## sum(!ii) > cierto número
-        x[which(ii)] <- fun(x, ...) #which por si NA en x
+        rr <- try(fun(x, ...))
+        if (!inherits(rr, "try-error")) {
+            x[which(ii)] <- rr
+        }
     }
+    
     invisible(x)
 }
 

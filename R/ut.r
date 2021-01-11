@@ -270,50 +270,16 @@ num_entre <- function(x, x1 = numeric(), x2 = numeric(),
     tf
 }
 
-#' porcentaje
-#' @description Porcentaje c.r.a base
-#' @param x numeric
-#' @param base numeric: base (un escalar) del porcentaje; por omisión,
-#'     la suma de los datos ignorando datos NA
-#' @param dec integer: número de decimales; por omisión, cero
-#' @return numeric
-#' @examples
-#' pct(2, 3)
-#' pct(1:3, 3)
-#' pct(1:3)
-#' \dontrun{
-#' pct(1:3, 3:1) #-> error
-#' }
-#' @export
-#' @author eddy castellón
-pct <- function(x = numeric(), base = numeric(), dec = 0L) {
-
-    stopifnot("arg. inadmisible" = filled_num(x) &&
-                  (is_scalar(base) || is_vacuo(base)) &&
-                  is.numeric(base))
-    
-    if (is_vacuo(base)) {
-        base <- sum(x, na.rm = TRUE)
-    }
-
-    if (base == 0 || is.na(base)) {
-        pp <- NA_real_
-        warning("base es igual a cero")
-    } else {
-        pp <- round((100 * x) / base, dec)
-    }
-    pp
-}
-
-#' fracción
+#' División
 #' @description Calcula el cociente y redondea.
 #' @details Los argumentos a los parámetros deben contener el mismo
-#'     número de elementos o si difieren uno (numerador o denominador)
-#'     debe ser un escalar. Donde el resultado es infinito, devuelve
-#'     NA.
+#'     número de elementos o, si difieren, uno (numerador o
+#'     denominador) debe ser un escalar. Donde el resultado es
+#'     infinito, devuelve NA.
 #' @param x numeric: numerador
 #' @param y numeric: denominador
-#' @param dec integer: decimales en el resultado
+#' @param dec integer o NA: número de decimales del resultado; si NA
+#'     (valor por omisión), no redondea
 #' @return double o NA
 #' @examples
 #' frac(2, 3)
@@ -324,17 +290,82 @@ pct <- function(x = numeric(), base = numeric(), dec = 0L) {
 #' }
 #' @export
 #' @author eddy castellón
-frac <- function(x = double(), y = double(), dec = 2L) {
+dividir <- function(x = double(), y = double(), dec = NA) {
     stopifnot("arg. no numerico" = filled_num(x) && filled_num(y),
               "arg. difiere longitud" = length(x) == length(y) ||
                   (length(x) > 1 && length(y) == 1) ||
                   (length(x) == 1 && length(y) > 1))
 
-    r <- round(x / y, dec)
+    r <- x / y
     r[is.infinite(r)] <- NA_real_
+
+    if (!is.na(dec)) {
+        r <- round(r, dec)
+    }
+    
     r
 }
 
+#' Porcentaje
+#' @description Porcentaje c.r.a base
+#' @param x numeric
+#' @param base numeric: base del porcentaje; por omisión,
+#'     la suma de los datos ignorando los NA
+#' @param dec integer: número de decimales; por omisión, cero
+#' @return numeric o NA
+#' @examples
+#' pct(2, 3)
+#' pct(1:3, 3)
+#' pct(1:3)
+#' pct(1:3, 1:3)
+#' \dontrun{
+#' pct(1:3, 3:2) #-> error
+#' }
+#' @export
+#' @author eddy castellón
+pct <- function(x = numeric(), base = numeric(), dec = 0L) {
+
+    stopifnot("arg. inadmisible" = filled_num(x) &&
+                  is.numeric(base))
+    
+    if (is_vacuo(base)) {
+        base <- sum(x, na.rm = TRUE)
+    }
+
+    if (all(base == 0 || is.na(base))) {
+        pp <- vector("numeric", length(x)) + NA_real_
+        warning("base es igual a cero o NA")
+    } else {
+        pp <- round(100 * dividir(x, base, NA), dec)
+    }
+    pp
+}
+
+#' Porcentaje-grupos
+#' @description Contribución al total del grupo
+#' @param x numeric: datos
+#' @param by numeric o character o factor: variable agrupamiento; por
+#'     omisión, sin agrupar
+#' @param dec integer: decimales; 0 por omisión
+#' @return list
+#' @examples
+#' aporte(1:4, c("a", "a", "b", "b"))
+#' @export
+aporte <- function(x = numeric(), by = numeric(), dec = 0L) {
+
+    stopifnot("arg. inadmisible" = filled_num(x),
+              "arg. inadmisible" = is_scalar0(by) ||
+                  length(by) == length(x),
+              "arg. inadmisible" = filled_num(dec) &&
+                  is_scalar(dec)
+              )
+
+    if (is_scalar0(by)) {
+        list(pct(x, dec = dec))
+    } else {
+        tapply(x, by, pct, dec = dec, simplify = FALSE)
+    }
+}
 
 #' buscar-remplazar
 #' @description Busca elementos de un vector en otro, y remplaza con
