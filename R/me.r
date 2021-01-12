@@ -423,12 +423,16 @@ df_fxp <- function(dfq, dfp, qres, ccon = "c5000", cues = "quest",
 #' @param dec integer: número de decimales del resultado; 6 por
 #'     omisión
 #' @return numeric escalar
+#' @examples
+#' aa <- data.frame(x = 1:4, w = c(1, 1, 1, 1.5))
+#' wc <- w_calibra(aa$x, aa$w, 10, 4)
+#' sum(aa$x * aa$w * wc)
 #' @export
 #' @author eddy castellón
 w_calibra <- function(x, factor, totpob = numeric(), dec = 6L) {
-    stopifnot("arg. inadmisible" = filled_num(x) &&
+    stopifnot("arg. x, fac., inadmisible" = filled_num(x) &&
                   filled_num(factor),
-              "arg. inadmisible" = is_scalar(totpob) &&
+              "arg. totpob inadmisible" = is_scalar(totpob) &&
                   filled_num(totpob))
 
     te <- totpob / sum(x * factor, na.rm = TRUE)
@@ -438,23 +442,23 @@ w_calibra <- function(x, factor, totpob = numeric(), dec = 6L) {
     round(te, dec)
 }
 
-#' calibra - estrato
+#' calibra - grupo
 #' @description Calibra las ponderaciones por grupo.
-#' @details Aplica la función \code{w_calibra} a datos agrupados. Por
-#'     ejemplo para calibrar las ponderaciones por superficie de los
-#'     estratos de un departamento, los grupos serían los estratos.
+#' @details Aplica la función \code{w_calibra} a datos agrupados,
+#'     como, por ejemplo, cuando se calibran las ponderaciones por la
+#'     superficie de los estratos (grupos) de un departamento.
 #'
-#'     El arg. "dfo" debe tener las columnas con los datos de la
-#'     variable de calibración (p.ej. superficie), del grupo al que
+#'     El arg. "dfo" es el data.frame con las columnas de los datos de
+#'     la variable de calibración (p.ej. superficie), del grupo al que
 #'     pertenece el dato (p.ej. estrato) y de las ponderaciones
 #'     iniciales. La posición o nombre de esas columnas se pasa en el
-#'     arg. "cob" en el orden: variable calibración, grupo y
-#'     ponderación. El arg. "dfg" es el data frame con los datos de
+#'     arg. "cob" en el orden: grupo, variable calibración y
+#'     ponderación. El arg. "dfg" es el data.frame con los datos de
 #'     los grupos: una columna con el dato que identifica al grupo
-#'     (p.ej. estrato) y otra con el valor correspondiente al grupo
-#'     (p.ej. superficie del estrato). La posición o nombre de las
-#'     columnas se pasa en el arg. "cgr" en el orden: grupo, valor del
-#'     grupo.
+#'     (p.ej. estrato) y otra con el valor (total) de la variable de
+#'     calibración correspondiente al grupo (p.ej. superficie del
+#'     estrato). La posición o nombre de las columnas se pasa en el
+#'     arg. "cgr" en el orden: grupo, valor de la variable.
 #'
 #'     La función devuelve el arg. "dfo" con la columna adicional «wc»
 #'     en la que están los factores de calibración.
@@ -462,17 +466,25 @@ w_calibra <- function(x, factor, totpob = numeric(), dec = 6L) {
 #' @param dfo data.frame: datos de las observaciones (vea detalles)
 #' @param dfg data.frame: datos de los grupos (vea detalles)
 #' @param cob numeric o character: posición (integer) o nombre
-#'     (character) de las columnas de datos (vea detalles); por
-#'     omisión \code{1:3}.
+#'     (character) de las columnas con los datos de grupo, variable de
+#'     calibración, ponderación (vea detalles); por omisión
+#'     \code{1:3}.
 #' @param cgr numeric o character: posición (integer) o nombre
---#'     (character) de la columna que identifica al grupo y el valor
-#'     correspondiente al grupo (vea detalles); por omisión \code{1:2}
+#'     (character) de las columnas que identifican al grupo y el valor
+#'     de la variable de calibración (vea detalles); por omisión
+#'     \code{1:2}
 #' @param dec integer: número de decimales en la ponderación; 6 por
 #'     defecto
 #' @return data.frame
+#' @examples
+#' aa <- data.frame(x = 1:4, g = c("a", "a", "b", "b"),
+#'                  w = c(1, 1, 1, 1.5))
+#' bb <- data.frame(g = c("a", "b"), v = c(4, 10))
+#' wc <- wg_calibra(aa, bb, cob = c(2, 1, 3), dec = 4)
+#' tapply(wc$x * wc$w * wc$wc, wc$g, sum)
 #' @export
 #' @author eddy castellón
-w_estrato <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
+wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
 
     stopifnot(exprs = {
         "arg. inadmisible" = inherits(dfo, "data.frame") &&
@@ -494,18 +506,21 @@ w_estrato <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
     if (is.character(cob)) {
         cob <- which(is.element(names(dfo), cob))
     }
+    cob <- setNames(cob, c("gr", "vc", "wg"))
+    
     if (is.character(cgr)) {
         cgr <- which(is.element(names(dfg), cgr))
     }
+    cgr <- setNames(cgr, c("gr", "vc"))
 
-    go <- dfo[[cob[2]]]
-    gr <- dfg[[cgr[1]]]
+    go <- dfo[[cob["gr"]]]
+    gr <- dfg[[cgr["gr"]]]
     stopifnot("grupos incomp." = all(is.element(go, gr)))
 
     ww <- split(dfo, go, drop = TRUE)
     xx <- split(dfg, gr, drop = TRUE)
     ff <- function(x, y) {
-        w_calibra(x[cob[1]], x[cob[3]], y[cgr[2]], dec) 
+        w_calibra(x[[cob["vc"]]], x[[cob["wg"]]], y[[cgr["vc"]]], dec)
     }
     wc <- Map(ff, ww, xx) %>% c(recursive = TRUE)
 
@@ -515,23 +530,27 @@ w_estrato <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
 
 ## -- outliers --
 
-#' outlier-estimado
+#' outlier-estimación
 #' @description Identifica las observaciones cuyo aporte al total es
 #'     «extremo» de acuerdo a la cota arg. "pct".
 #' @details Devuelve un data.frame con los datos «extremos» y el
-#'     número de observaciones involucradas en el cálculo del total.
+#'     número de observaciones involucradas en el cálculo del
+#'     total. Si no hay datos «extremos» devuelve NULL.
 #' @param x numeric: las observaciones
 #' @param id numeric o character: «id» de las observaciones
 #' @param by numeric, character o factor: variable de agrupamiento
 #' @param cota numeric escalar: cota superior al porcentaje de la
 #'     contribución; por omisión, 10
-#' @return lista de data.frame
+#' @param orden logical: filas del resultado en orden decreciente por
+#'     aporte?; por omisión TRUE
+#' @return data.frame o NULL, invisible
 #' @examples
-#' aa <- data.frame(x = 1:5, y = c(2000, 1, 2, 2, 1000),
+#' aa <- data.frame(x = 1:5, y = c(100, 1, 2, 2, 1000),
 #'                  z = c("a", "a", "a", "b", "b"))
-#' aporte_extremo(aa$y, aa$x, aa$z)
+#' (aporte_exceso(aa$y, aa$x, aa$z))
 #' @export
-aporte_extremo <- function(x, id, by = integer(), cota = 10L) {
+aporte_exceso <- function(x, id, by = integer(), cota = 10L,
+                           orden = TRUE) {
     stopifnot("arg. inadmisible" = filled_num(x),
               "arg. inadmisible" = filled(id) &&
                   length(id) == length(x),
@@ -539,21 +558,33 @@ aporte_extremo <- function(x, id, by = integer(), cota = 10L) {
                   length(by) == length(x),
               "arg. inadmisible" = is_scalar(cota) && cota < 100)
 
-    ap <- aporte(x, by)
-    
-    if (is_scalar0(by)) {
-        nn <- list(length(x))
-        ob <- list(id)
-    } else {
-        nn <- tapply(x, by, length, simplify = FALSE)
-        ob <- tapply(id, by, identity, simplify = FALSE)
+    ff <- function(x, id) {
+        ap <- pct(x)
+        nn <- which(ap > cota)
+        if (length(nn)) {
+            if (orden) {
+                nn <- nn[order(ap[nn], decreasing = TRUE)]
+            }
+            data.frame(id = id[nn],
+                       ap = ap[nn],
+                       nt = rep(length(x), length(nn)))
+        } else {
+            NULL
+        }
     }
 
-    ae <- Map(function(x, y) {
-        ii <- x > cota
-        data.frame(id = y[ii], pct = x[ii])}, ap, ob)
+    if (is_scalar0(by)) {
+        x <- list(x)
+        id <- list(id)
+    } else {
+        x <- tapply(x, by, identity, simplify = FALSE)
+        id <- tapply(id, by, identity, simplify = FALSE)
+    }
     
-    Map(function(x, y) cbind(x, n = y), ae, nn)
+    ae <- Map(ff, x, id) %>%
+        Reduce(rbind, .)
+    
+    invisible(ae)
 }
 
 #' outlier
@@ -572,7 +603,7 @@ aporte_extremo <- function(x, id, by = integer(), cota = 10L) {
 #' @param ... argumentos pasados a fun
 #' @return numeric, invisible
 #' @examples
-#' (remplazar_outlier(c(200, 1:5, 1000), 100, mean, trim=0.1))
+#' (remplazar_outlier(c(200, 1:5, 1000), 100, mean, trim = 0.1))
 #' @export
 remplazar_outlier <- function(x, cota = 0.0, fun, mayor = TRUE,
                               msj = FALSE, ...) {
@@ -602,3 +633,89 @@ remplazar_outlier <- function(x, cota = 0.0, fun, mayor = TRUE,
     invisible(x)
 }
 
+##--- misc ---
+
+#' autorreferencias
+#' @description Identifica los cuestionarios «copia» con error de
+#'     autorreferencia
+#' @details En los muestreos con reposición, la misma unidad de
+#'     muestreo puede aparecer en la muestra más de una vez; y
+#'     entonces, uno o más de los cuestionarios resulta ser «copia» de
+#'     uno que se denomina «origen». Si se quiere llevar control sobre
+#'     las «copias» para fines de manejo de los datos, por principio
+#'     todas ellas deben hacer referencia al mismo cuestionario
+#'     «origen», de modo que si hay dos o más «copias», se cae en
+#'     error de «autorreferencia» si una tiene por «origen» un
+#'     cuestionario y otra otro cuestionario «copia».
+#'
+#'     El pmto. "qst" recibe la numeración o «id» de todos los
+#'     cuestionarios, y el pmto. "dup" la de los correspondientes
+#'     cuestionarios «origen». Si un elemento en "qst" es el «id» de
+#'     un cuestionario «copia» de otro, el correspondiente en "dup"
+#'     lleva el número o «id» de su «origen»; si no es «copia», en
+#'     "dup" va NA.
+#'
+#'     La función devuelve el «id» de los cuestionarios «copia» que
+#'     tienen como «origen» otro cuestionario «copia», o NULL si no
+#'     hay error de autorreferencia.
+#' @param qst numeric: códigos o «id» de los cuestionarios
+#' @param dup numeric: códigos de los cuestionarios «origen»
+#' @return numeric o NULL
+#' @examples
+#' aa <- 1:5
+#' bb <- c(NA, NA, 1, 1, 3)
+#' v_auto(aa, bb)
+#' @export
+#' @author eddy castellón
+v_auto <- function(qst, dup){
+    stopifnot("arg. inadmisible" = filled_num(qst) &&
+                  filled_num(dup) && length(qst) == length(dup))
+    
+    ii <- !is.na(dup)
+    jj <- dup[ii] %in% qst[ii]
+
+    if (any(jj)){
+        message(sum(jj), " autorreferencias")
+        qst[which(ii)[jj]]
+    } else {
+        NULL
+    }
+}
+
+#' duplicar copias
+#' @description Copia los datos de una variable, de los cuestionarios
+#'     «origen» a los cuestionarios «copia»
+#' @param x numeric: datos de la variable
+#' @param qst numeric: códigos o «id» de los cuestionarios
+#' @param dup numeric: código o «id» del cuestionario «origen» si la
+#'     boleta es «copia»; NA si no es «copia»
+#' @return numeric invisible
+#' @examples
+#' aa <- 1:5
+#' bb <- 11:15
+#' cc <- c(NA, NA, 12, NA, 11)
+#' (duplicar_v(aa, bb, cc))
+#' @export
+#' @author eddy castellón
+duplicar_v <- function(x, qst, dup) {
+
+    stopifnot("arg. inadmisible" = filled_num(x) &&
+                  filled_num(qst) && filled_num(dup) &&
+                  length(x) == length(qst) &&
+                  length(x) == length(dup))
+    
+    ii <- !is.na(dup)
+    mm <- match(dup[ii], qst)
+    jj <- !is.na(mm)
+    if (any(!jj)){
+        message(sum(!jj), " duplicadas sin origen")
+    }
+    
+    qq <- v_auto(qst, dup)
+    if (!is.null(qq)){
+        message("autorreferenciadas no se duplican")
+        jj <- jj & !qst[ii] %in% qq
+    }
+    x[which(ii)[jj]] <- x[mm[jj]]
+    invisible(x)
+}

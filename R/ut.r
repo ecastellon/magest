@@ -21,7 +21,7 @@ is_empty <- function(x) {
 
 #' Escalar
 #' @description Es vector con un elemento?
-#' @param x
+#' @param x vector
 #' @return logical
 #' @keywords internal
 is_scalar <- function(x) {
@@ -30,7 +30,7 @@ is_scalar <- function(x) {
 
 #' Escalar
 #' @description Es vector vacío o con un elemento?
-#' @param x
+#' @param x vector
 #' @return logical
 #' @keywords internal
 is_scalar0 <- function(x) {
@@ -349,9 +349,9 @@ pct <- function(x = numeric(), base = numeric(), dec = 0L) {
 #' @param dec integer: decimales; 0 por omisión
 #' @return list
 #' @examples
-#' aporte(1:4, c("a", "a", "b", "b"))
+#' pct_grupo(1:4, c("a", "a", "b", "b"))
 #' @export
-aporte <- function(x = numeric(), by = numeric(), dec = 0L) {
+pct_grupo <- function(x = numeric(), by = numeric(), dec = 0L) {
 
     stopifnot("arg. inadmisible" = filled_num(x),
               "arg. inadmisible" = is_scalar0(by) ||

@@ -227,8 +227,8 @@ db_sql <- function(driver = "{SQL Server}", server = character(),
 #' @param ronly acceso de sólo lectura?. TRUE por defecto.
 #' @return objeto de clase odb
 #' @examples
-#' ox <- db_xcl(system.file(demofiles/mydata.xlsx", package =
-#' "XLConnect"))
+#' ox <- db_xcl(system.file("demofiles/mydata.xlsx",
+#' package = "XLConnect"))
 #' str(ox)
 #' @export
 db_xcl <- function(file = character(), version7 = TRUE, ronly = TRUE) {
@@ -339,8 +339,8 @@ is_open.RODBC <- function(x) {
 #' @description Información básica sobre la base de datos y el
 #'     "driver"
 #' @param x objeto RODBC
-#' @examples
 #' @return character
+#' @examples
 #' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
 #' "XLConnect"))
 #' op <- db_open(ox)
@@ -502,6 +502,7 @@ db_fetch.RODBC <- function(x, tb = character(), strfac = FALSE,
 #'     defecto
 #' @param ... adicionales para \code{RODBC::sqlSave}
 #' @return NULL o mensaje de error
+#' @examples
 #' fi <- system.file("demofiles/mydata.xlsx", package =
 #' "XLConnect")
 #' ox <- db_xcl(fi)
@@ -838,16 +839,16 @@ read_cel_xcl <- function(file = character(),
 #' @export
 #' @examples
 #' xsql(list(list("tab", c("cm1", "cm2"))))
-#' #-> "select cm1, cm2 from tab"
+#' ##-> "select cm1, cm2 from tab"
 #' xsql(list(list("tab", c(x = "cm1", y = "cm2"))))
-#' #-> "select cm1 as x, cm2 as y from tab"
+#' ##-> "select cm1 as x, cm2 as y from tab"
 #' xsql(list(list(a = "tab", c("cm1", "cm2"))))
-#' #-> "select a.cm1 as x, a.cm2 as y from tab a"
+#' ##-> "select a.cm1 as x, a.cm2 as y from tab a"
 #' tt <- list(list(a = "ta", c(w = "a", x = "b")),
 #'            list(b = "tb", c(y = "c", z = "d")))
 #' xsql(tt, joi = "in", whr = "a.a=b.c")
-#' #-> "select a.a as w,a.b as x, b.c as y, b.d as z ...
-#'      from ta a, tb b inner join on a.a=b.c"
+#' ##-> "select a.a as w,a.b as x, b.c as y, b.d as z ...
+#' ##    from ta a, tb b inner join on a.a=b.c"
 xsql <- function(x = list(), whr = character(), ord = character(),
                  qby = character(), joi = character()) {
     stopifnot(exprs = {
