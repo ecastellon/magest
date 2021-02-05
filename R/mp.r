@@ -579,7 +579,7 @@ save_xcl <- function(x, tabla = character(), file = character(),
     kk <- db_open(oo)
     if (is_rodbc(kk)){
         db_save(kk, df, tabla)
-        odbcClose(kk)
+        db_close(kk)
     } else {
         message("error conexión\n")
     }
@@ -607,7 +607,7 @@ read_xcl <- function(x, file, xv7 = TRUE) {
     kk <- db_open(oo)
     if (is_rodbc(kk)){
         uu <- db_fetch(kk, x)
-        odbcClose(kk)
+        db_close(kk)
     } else {
         uu <- NULL
     }
@@ -1142,7 +1142,7 @@ get_data.odb <- function(x, qstr = character(), meta = character(),
     kk <- db_open(x)
     if (ok <- is_rodbc(kk)) {
         ww <- db_qry(kk, qstr, max = max)
-        odbcClose(kk)
+        db_close(kk)
     
         if (ok <- is.data.frame(ww)) {
             if (na_0) {

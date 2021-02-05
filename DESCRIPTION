@@ -18,7 +18,7 @@ Suggests:
     testthat
 Depends:
         magrittr,
-        dplyr
-Imports:
-        RODBC,
+        dplyr,
         foobj
+Imports:
+        RODBC
