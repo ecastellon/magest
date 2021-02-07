@@ -226,6 +226,8 @@ ok_fname <- function(x = character()) {
 
 ##--- misc ---
 
+en <- function(x, y) !is.na(match(x, y))
+
 #' NA a cero
 #' @description Convierte a 0 los elementos NA de un vector de modo
 #'     numérico

@@ -41,7 +41,7 @@
 #'     utilizadas en el cálculo: departamento, estrato, superficie;
 #'     por omisión c(1, 2, 3).
 #' @param ces integer con los números de las columnas del data.frame
-#'     dfs, utilizadas en el cálculo: departamento, estrato,
+#'     dfe, utilizadas en el cálculo: departamento, estrato,
 #'     sup. estrato, puntos en estrato; por omisión c(1, 2, 3, 4)
 #' @param tamu logical: calcular el número de observaciones en los
 #'     estratos y utilizarlos como el tamaño de la muestra?; FALSE por
@@ -75,7 +75,7 @@ w_pr <- function(x, dfe, cob = seq.int(3), ces = seq.int(4),
         ix <- interaction(x[[cob["dpt"]]], x[[cob["est"]]])
         ie <- interaction(dfe[[ces["dpt"]]], dfe[[ces["est"]]])
         mm <- match(ix, ie)
-        ok  <- !is.na(mm)
+        ok  <- all(!is.na(mm))
     } else {
         message("\n... inconsistencias en los argumentos !!!")
     }
@@ -284,7 +284,7 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
     ## trasladar a dfq las columnas de dft que no están
     if (missing(dft)) {#asegurar todos los datos en dfq
         cc <- setdiff(c(csup, cues, cdup), names(dfq))
-        stopifnot("faltan columnas" = filled(cc))
+        stopifnot("faltan columnas" = is_vacuo(cc))
     } else {
         cc <- setdiff(names(dft), names(dfq))
         nn <- nrow(dfq)
