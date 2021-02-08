@@ -578,7 +578,7 @@ save_xcl <- function(x, tabla = character(), file = character(),
     oo <- db_xcl(file, version7 = xv7, ronly = FALSE)
     kk <- db_open(oo)
     if (is_rodbc(kk)){
-        db_save(kk, df, tabla)
+        db_save(kk, df, tabla) ## error x
         db_close(kk)
     } else {
         message("error conexión\n")

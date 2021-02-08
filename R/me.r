@@ -98,8 +98,8 @@ w_pr <- function(x, dfe, cob = seq.int(3), ces = seq.int(4),
             fx[ii] <- NA_real_
         }
     } else {
-        message(paste("\n... inconsistencia de código dpto o estrato en",
-                      "los data.frame !!!"))
+        message("\n... inconsistencia de código dpto o estrato en",
+                      "los data.frame !!!")
     }
     
     return(fx)
@@ -161,7 +161,7 @@ w_nr <- function(x, cnr, qsr, qnr, dec = 4L) {
     if (ok) {
         cn <- factor(cnr)
         nr <- tapply(x %in% qnr, cn, sum) #no resp
-        sr <- tapply(x %in% qsr, cn, sum) #reponden
+        sr <- tapply(x %in% qsr, cn, sum) #responden
         ii <- sr > 0
         fc <- round(nr[ii] / sr[ii], dec)
         
@@ -485,7 +485,7 @@ w_calibra <- function(x, factor, totpob = numeric(), dec = 6L) {
 #' @export
 #' @author eddy castellón
 wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
-
+    ## !!! modificar para que devuelva vector atómico
     stopifnot(exprs = {
         "arg. inadmisible" = inherits(dfo, "data.frame") &&
             inherits(dfg, "data.frame")
@@ -503,11 +503,13 @@ wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
         "arg. inadmisible" = is_scalar(dec) && filled_num(dec)
     })
 
+    ## malo
     if (is.character(cob)) {
         cob <- which(is.element(names(dfo), cob))
     }
     cob <- setNames(cob, c("gr", "vc", "wg"))
-    
+
+    ## malo
     if (is.character(cgr)) {
         cgr <- which(is.element(names(dfg), cgr))
     }
@@ -565,9 +567,9 @@ aporte_exceso <- function(x, id, by = integer(), cota = 10L,
             if (orden) {
                 nn <- nn[order(ap[nn], decreasing = TRUE)]
             }
-            data.frame(id = id[nn],
-                       ap = ap[nn],
-                       nt = rep(length(x), length(nn)))
+            data.frame(ide = id[nn],
+                       pct = ap[nn],
+                       nob = rep(length(x), length(nn)))
         } else {
             NULL
         }

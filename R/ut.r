@@ -162,6 +162,21 @@ quitar_0.data.frame <- function(df, excepto = character()) {
 
 ##--- strings ---
 
+#' factor a caracter
+#' @description transforma vector tipo factor a caracter
+#' @param x factor
+#' @return character
+#' @keywords internal
+fac2char <- function(x) {
+    if (is.factor(x)) {
+        ww <- levels(x)[x]
+    } else {
+        message("argumento no es factor...")
+        ww <- x
+    }
+    ww
+}
+
 #' Separar palabras
 #' @description Produce un vector con las palabras (token) que se
 #'     encuentran en una ristra de caracteres, separadas unas de otras
@@ -226,7 +241,7 @@ ok_fname <- function(x = character()) {
 
 ##--- misc ---
 
-en <- function(x, y) !is.na(match(x, y))
+en <- function(x, y) match(x, y, nomatch = 0) > 0
 
 #' NA a cero
 #' @description Convierte a 0 los elementos NA de un vector de modo
