@@ -3,7 +3,7 @@
 ##--- funciones para hacer estimaciones --
 
 #' factores
-#' @description Cálculo del factor de expansión
+#' @description Cálcula factor de expansión
 #' @details El data.frame asociado al parámetro "x" tiene las columnas
 #'     que corresponden a las observaciones (cuestionarios): el
 #'     departamento (integer) y estrato (integer) a los que está
@@ -79,7 +79,7 @@ w_pr <- function(x, dfe, cob = seq.int(3), ces = seq.int(4),
     } else {
         message("\n... inconsistencias en los argumentos !!!")
     }
-    
+
     fx  <- NULL
 
     if (ok) {
@@ -90,7 +90,7 @@ w_pr <- function(x, dfe, cob = seq.int(3), ces = seq.int(4),
                                            ie, names(nn),
                                            as.vector(nn))
         }
-        
+
         pp <- dfe[[ces["sup"]]] / dfe[[ces["tam"]]] #prom por punto
         fx <- round(pp[mm] / x[[cob["sup"]]], dec) #factor
         if (any(ii <- !is.finite(fx))) {
@@ -101,7 +101,7 @@ w_pr <- function(x, dfe, cob = seq.int(3), ces = seq.int(4),
         message("\n... inconsistencia de código dpto o estrato en",
                       "los data.frame !!!")
     }
-    
+
     return(fx)
 }
 
@@ -164,7 +164,7 @@ w_nr <- function(x, cnr, qsr, qnr, dec = 4L) {
         sr <- tapply(x %in% qsr, cn, sum) #responden
         ii <- sr > 0
         fc <- round(nr[ii] / sr[ii], dec)
-        
+ 
         wr <- 1.0 + remplazar(double(length(x)), fac2char(cn),
                               names(fc), fc, msg = FALSE)
     } else {
@@ -218,7 +218,7 @@ df_pto <- function(dfq, dfp, cues = "quest", cdpt = "dpt",
         is.element(cues, names(dfq))
         typeof(dfq[[cues]]) == typeof(dfp[[cues]])
     })
-    
+
     cc <- names(dfq)
     nn <- nrow(dfq)
 
@@ -275,12 +275,12 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
     stopifnot(exprs = {
         inherits(dfq, "data.frame")
         all(is.element(c(cues, cdup, ccon), names(dfq)))
-        
+
         ifelse(missing(dft), is.element(csup, names(dfq)),
                inherits(dft, "data.frame") &&
                all(is.element(c(cues, csup), names(dft))))
     })
-    
+
     ## trasladar a dfq las columnas de dft que no están
     if (missing(dft)) {#asegurar todos los datos en dfq
         cc <- setdiff(c(csup, cues, cdup), names(dfq))
@@ -290,7 +290,7 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
         nn <- nrow(dfq)
         dfq  <- select(dft, one_of(c(cues, cc))) %>%
             inner_join(dfq, ., by = cues)
-        
+
         if (nn <- abs(nn - nrow(dfq)) != 0) {
             warning(paste("\n... los data.frames difieren en", nn,
                           " filas !!!"), call. = FALSE)
@@ -358,7 +358,6 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
 #' df_fxp(dfobs, dfpun, c(1, 3))
 #' }
 #' @export
-#' 
 df_fxp <- function(dfq, dfp, qres, ccon = "c5000", cues = "quest",
                    cdup = "copiade", cdpt = "dpt", cmun = "mun",
                    cest = "est", csup = "sup", dft) {
@@ -368,17 +367,17 @@ df_fxp <- function(dfq, dfp, qres, ccon = "c5000", cues = "quest",
         all(is.element(c(cues, cdup, ccon), names(dfq)))
         (filled_num(qres) || filled_char(qres)) &&
             all(is.element(qres, unique(dfq[[ccon]])))
-        
+ 
         ifelse(missing(dfp),
                all(is.element(c(cdpt, cmun, cest), names(dfq))),
                inherits(dfp, "data.frame") &&
                all(is.element(c(cues, cdpt, cmun, cest), names(dfp))))
-        
+
         ifelse(missing(dft), is.element(csup, names(dfq)),
                inherits(dft, "data.frame") &&
                all(is.element(c(cues, csup), names(dft))))
     })
-    
+
     nc <- names(dfq)
 
     cc <- c(cues, cdpt, cmun, cest)
@@ -475,7 +474,7 @@ w_calibra <- function(x, factor, totpob = numeric(), dec = 6L) {
 #'     \code{1:2}
 #' @param dec integer: número de decimales en la ponderación; 6 por
 #'     defecto
-#' @return data.frame
+#' @return numeric
 #' @examples
 #' aa <- data.frame(x = 1:4, g = c("a", "a", "b", "b"),
 #'                  w = c(1, 1, 1, 1.5))
@@ -485,7 +484,7 @@ w_calibra <- function(x, factor, totpob = numeric(), dec = 6L) {
 #' @export
 #' @author eddy castellón
 wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
-    ## !!! modificar para que devuelva vector atómico
+
     stopifnot(exprs = {
         "arg. inadmisible" = inherits(dfo, "data.frame") &&
             inherits(dfg, "data.frame")
@@ -495,39 +494,28 @@ wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
         "arg. inadmisible" = length(cob) == 3 &&
             ((filled_char(cob) && all(is.element(cob, names(dfo)))) ||
             (filled_num(cob) && all(cob <= ncol(dfo))))
-        
+ 
         "arg. inadmisible" = length(cgr) == 2 &&
             ((filled_char(cgr) && all(is.element(cgr, names(dfg)))) ||
             (filled_num(cgr) && all(cgr <= ncol(dfg))))
-        
+
         "arg. inadmisible" = is_scalar(dec) && filled_num(dec)
     })
 
-    ## malo
-    if (is.character(cob)) {
-        cob <- which(is.element(names(dfo), cob))
-    }
     cob <- setNames(cob, c("gr", "vc", "wg"))
 
-    ## malo
-    if (is.character(cgr)) {
-        cgr <- which(is.element(names(dfg), cgr))
-    }
     cgr <- setNames(cgr, c("gr", "vc"))
 
-    go <- dfo[[cob["gr"]]]
-    gr <- dfg[[cgr["gr"]]]
-    stopifnot("grupos incomp." = all(is.element(go, gr)))
+    go <- factor(dfo[[cob["gr"]]])
+    gr <- factor(dfg[[cgr["gr"]]])
+    stopifnot("grupos incomp." = all(is.element(levels(go), levels(gr))))
 
-    ww <- split(dfo, go, drop = TRUE)
-    xx <- split(dfg, gr, drop = TRUE)
-    ff <- function(x, y) {
-        w_calibra(x[[cob["vc"]]], x[[cob["wg"]]], y[[cgr["vc"]]], dec)
-    }
-    wc <- Map(ff, ww, xx) %>% c(recursive = TRUE)
-
-    nn <- table(go)
-    cbind(dfo, wc = rep(wc, nn))
+    ww <- split(dfo[[cob["wg"]]], go, drop = TRUE)
+    vv <- split(dfo[[cob["vc"]]], go, drop = TRUE)
+    xx <- split(dfg[[cgr["vc"]]], gr, drop = TRUE)
+    wc <- mapply(function(x, y, z) w_calibra(x, y, z, dec = dec), vv, ww, xx,
+                USE.NAMES = FALSE, SIMPLIFY = FALSE)
+    unsplit(wc, go)
 }
 
 ## -- outliers --
@@ -551,7 +539,7 @@ wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
 #'                  z = c("a", "a", "a", "b", "b"))
 #' (aporte_exceso(aa$y, aa$x, aa$z))
 #' @export
-aporte_exceso <- function(x, id, by = integer(), cota = 10L,
+out_pct <- function(x, id, by = integer(), cota = 10L,
                            orden = TRUE) {
     stopifnot("arg. inadmisible" = filled_num(x),
               "arg. inadmisible" = filled(id) &&
@@ -582,10 +570,10 @@ aporte_exceso <- function(x, id, by = integer(), cota = 10L,
         x <- tapply(x, by, identity, simplify = FALSE)
         id <- tapply(id, by, identity, simplify = FALSE)
     }
-    
+
     ae <- Map(ff, x, id) %>%
         Reduce(rbind, .)
-    
+
     invisible(ae)
 }
 
@@ -607,7 +595,7 @@ aporte_exceso <- function(x, id, by = integer(), cota = 10L,
 #' @examples
 #' (remplazar_outlier(c(200, 1:5, 1000), 100, mean, trim = 0.1))
 #' @export
-remplazar_outlier <- function(x, cota = 0.0, fun, mayor = TRUE,
+out_remplazo <- function(x, cota = 0.0, fun, mayor = TRUE,
                               msj = FALSE, ...) {
     stopifnot("arg. inadmisible" = filled_num(x),
               "arg. inadmisible" = is.function(fun),
@@ -619,7 +607,7 @@ remplazar_outlier <- function(x, cota = 0.0, fun, mayor = TRUE,
     } else {
         ii <- x < cota
     }
-    
+
     if (any(ii)) {
         if (msj) {
             nn <- sum(ii, na.rm = TRUE)
@@ -669,14 +657,14 @@ remplazar_outlier <- function(x, cota = 0.0, fun, mayor = TRUE,
 #' v_auto(aa, bb)
 #' @export
 #' @author eddy castellón
-v_auto <- function(qst, dup){
+v_auto <- function(qst, dup) {
     stopifnot("arg. inadmisible" = filled_num(qst) &&
                   filled_num(dup) && length(qst) == length(dup))
     
     ii <- !is.na(dup)
     jj <- dup[ii] %in% qst[ii]
 
-    if (any(jj)){
+    if (any(jj)) {
         message(sum(jj), " autorreferencias")
         qst[which(ii)[jj]]
     } else {
@@ -709,12 +697,12 @@ duplicar_v <- function(x, qst, dup) {
     ii <- !is.na(dup)
     mm <- match(dup[ii], qst)
     jj <- !is.na(mm)
-    if (any(!jj)){
+    if (any(!jj)) {
         message(sum(!jj), " duplicadas sin origen")
     }
     
     qq <- v_auto(qst, dup)
-    if (!is.null(qq)){
+    if (!is.null(qq)) {
         message("autorreferenciadas no se duplican")
         jj <- jj & !qst[ii] %in% qq
     }

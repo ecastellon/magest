@@ -574,11 +574,11 @@ save_xcl <- function(x, tabla = character(), file = character(),
               "arg. tabla inadmisible" = is_scalar_name(tabla),
               "arg. file inadmisible" = is_scalar(file) &&
                   file.exists(file))
-    
+
     oo <- db_xcl(file, version7 = xv7, ronly = FALSE)
     kk <- db_open(oo)
-    if (is_rodbc(kk)){
-        db_save(kk, df, tabla) ## error x
+    if (is_rodbc(kk)) {
+        db_save(kk, x, tabla)
         db_close(kk)
     } else {
         message("error conexión\n")
@@ -605,7 +605,7 @@ read_xcl <- function(x, file, xv7 = TRUE) {
                   file.exists(file))
     oo <- db_xcl(file, version7 = xv7, ronly = FALSE)
     kk <- db_open(oo)
-    if (is_rodbc(kk)){
+    if (is_rodbc(kk)) {
         uu <- db_fetch(kk, x)
         db_close(kk)
     } else {
@@ -694,7 +694,7 @@ save_cel_xcl <- function(x, file = character(),
     wb <- try(XLConnect::loadWorkbook(file, create = !fe),
               silent = TRUE)
     stopifnot("!!! ERROR libro" = inherits(wb, "workbook"))
-    
+
     if (fe) {
         sh <- XLConnect::getSheets(wb)
     } else {
@@ -716,7 +716,7 @@ save_cel_xcl <- function(x, file = character(),
     if (!is.element(hoja, sh)) {
         XLConnect::createSheet(wb, hoja)
     }
-        
+
     ## capturar errores
     tr <- try({XLConnect::writeWorksheet(wb, x, sheet = hoja,
                                   startRow = fila, startCol = col,
@@ -732,7 +732,7 @@ save_cel_xcl <- function(x, file = character(),
     if (ko) {
         warning("\n... Error escribir o guardar archivo !!!")
     }
-    
+
     !ko
 }
 
@@ -782,7 +782,7 @@ read_cel_xcl <- function(file = character(),
                is.element(hoja, sh),
                hoja >= 1 && hoja <= length(sh))
         )
-    
+ 
     mm <- XLConnect::cref2idx(rf1)
     r1  <- mm[1, 1]
     c1  <- mm[1, 2]
@@ -854,7 +854,6 @@ xsql <- function(x = list(), whr = character(), ord = character(),
     stopifnot(exprs = {
         "arg. x inadmisible" = filled_list(x) &&
                                 all(sapply(x, length) == 2)
-        
         "arg. whr inadmisible" = is.character(whr) &&
             is_scalar0(whr)
         "arg. ord inadmisible" = is.character(ord) &&
@@ -887,7 +886,7 @@ xsql <- function(x = list(), whr = character(), ord = character(),
             cm <- paste(nx[1], cm, sep = ".")
             tb <- paste(tb, nx[1])
         }
-        
+ 
         x[[1]] <- tb
         x[[2]] <- paste(cm, collapse = ",")
         x
@@ -900,7 +899,7 @@ xsql <- function(x = list(), whr = character(), ord = character(),
     x <- lapply(x, tbc) %>%
         Reduce(rdu, ., init = list("", "")) %>%
         substring(2)
-    
+ 
     ss <- paste("select", x[2], "from", x[1])
 
     ## condiciones
@@ -914,7 +913,7 @@ xsql <- function(x = list(), whr = character(), ord = character(),
 
     if(filled(ord) && nzchar(ord)) ss <- paste(ss, "order by", ord)
     if(filled(qby) && nzchar(gby)) ss <- paste(ss, "group by", gby)
-    
+ 
     ss
 }
 
@@ -1094,7 +1093,7 @@ xsql_t <- function(x = character(), cam = character(),
              length(cam) == length(nvb) * length(idc))
         "arg. idr inadmisible" = is_scalar_name(idr)
     })
-    
+ 
     cn <- c(idr, nvb)
     mk <- matrix(cam, ncol = length(nvb), byrow = xfi) %>%
         cbind(idr, .) %>%
@@ -1103,7 +1102,7 @@ xsql_t <- function(x = character(), cam = character(),
 
 
     #ss <- split(mk, seq_len(nrow(mk))) %>%
-     #ss <- apply(mk, 1, function(z)xsql_s(x, cm = setNames(z, cn)))
+    #ss <- apply(mk, 1, function(z)xsql_s(x, cm = setNames(z, cn)))
     #           USE.NAMES = FALSE)
 
     xsql_u(mk, idc, cid, all)
@@ -1143,7 +1142,7 @@ get_data.odb <- function(x, qstr = character(), meta = character(),
     if (ok <- is_rodbc(kk)) {
         ww <- db_qry(kk, qstr, max = max)
         db_close(kk)
-    
+ 
         if (ok <- is.data.frame(ww)) {
             if (na_0) {
                 ww[] <- lapply(ww, na0)
@@ -1157,6 +1156,6 @@ get_data.odb <- function(x, qstr = character(), meta = character(),
         }
     }
     if (!ok) ww <- NULL
-    
+ 
     invisible(ww)
 }

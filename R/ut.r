@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-##--- utilidad general --
+## --- utilidad general --
 #' length
 #' @description vector has length equal zero
 #' @param x vector
@@ -123,27 +123,32 @@ quitar_0 <- function(x, excepto) UseMethod("quitar_0")
 #'     columnas de modo numeric que serán ignoradas
 #' @return data.frame
 #' @examples
-#' aa <- data.frame(x = 1:5, y = c(0, 0, 0, 1, 1),
-#'                  z = c(5, 0, 0, 2, 0))
+#' aa <- data.frame(
+#'     x = 1:5, y = c(0, 0, 0, 1, 1),
+#'     z = c(5, 0, 0, 2, 0)
+#' )
 #' (quitar_0(aa, excepto = "x"))
 #' @export
 #' @author eddy castellón
 quitar_0.data.frame <- function(df, excepto = character()) {
-    stopifnot("arg. df inadmisible" = inherits(df, "data.frame"),
-              "arg. excepto inadmisible" = is.character(excepto) ||
-                  is.numeric(excepto))
+    stopifnot(
+        "arg. df inadmisible" = inherits(df, "data.frame"),
+        "arg. excepto inadmisible" = is.character(excepto) ||
+            is.numeric(excepto)
+    )
 
     ii <- vapply(df, is.numeric, TRUE, USE.NAMES = FALSE)
     if (any(ii)) {
         nm <- names(df)
-        if (filled_num(excepto)) {#supone en rango
+        if (filled_num(excepto)) { # supone en rango
             excepto <- as.integer(excepto) %>%
                 intersect(seq_along(nm))
             excepto <- nm[excepto]
             if (is_vacuo(excepto)) {
                 warning("\n... no filtrar ... arg. excep. fuera rango",
-                        call. = FALSE)
-                excepto <- nm #no filtrar datos
+                    call. = FALSE
+                )
+                excepto <- nm # no filtrar datos
             }
         }
 
@@ -156,11 +161,11 @@ quitar_0.data.frame <- function(df, excepto = character()) {
             df <- dplyr::filter_at(df, vars(ss), any_vars(. > 0))
         }
     }
-    
+
     invisible(df)
 }
 
-##--- strings ---
+## --- strings ---
 
 #' factor a caracter
 #' @description transforma vector tipo factor a caracter
@@ -188,8 +193,8 @@ fac2char <- function(x) {
 #' @examples
 #' tok_str("aa bb,cc") #-> c("aa", "bb", "cc")
 #' @author eddy castellón
-tok_str <- function(str){
-    strsplit(str, split="[[:space:],]+")[[1L]]
+tok_str <- function(str) {
+    strsplit(str, split = "[[:space:],]+")[[1L]]
 }
 
 #' fabrica código
@@ -213,7 +218,7 @@ codigo_fac <- function(x, prf = "c", di = 3) {
     function(x) sprintf(paste0("%s%0", di, "i"), prf, x)
 }
 
-##--- files ---
+## --- files ---
 
 #' file name
 #' @description Valida nombre de archivo.
@@ -235,12 +240,36 @@ ok_fname <- function(x = character()) {
             }
         }
     }
-    
+
     return(ok)
 }
 
-##--- misc ---
+## --- misc ---
 
+#' Aparear
+#' @description Hace match con varios vectores
+#' @details Para encontrar el "match" de una pareja de vectores con otra pareja
+#' lo común es primero construir vectores adicionales con la función
+#' "interaction" y luego hacer el "match" con los vectores resultantes.
+#'
+#' Esta función automatiza ese proceso. Recibe un número par de vectores y
+#' construye la interacción de una mitad y de la otra mitad y hace el "match".
+#' Además de manera opcional puede informar cuántos elementos no hicieron
+#' "match".
+#'
+#' @param ... dos o más vectores
+#' @return integer
+#' @export
+match_g <- function(...) {
+    x <- alist(...)
+}
+
+#' Alias %in%
+#' @description Operado infijo %in% como función
+#' @param x vector
+#' @param y vector
+#' @return logical
+#' @export
 en <- function(x, y) match(x, y, nomatch = 0) > 0
 
 #' NA a cero
@@ -273,15 +302,17 @@ na0 <- function(x) {
 #' @export
 num_entre <- function(x, x1 = numeric(), x2 = numeric(),
                       inclusive = FALSE) {
-    stopifnot("arg. x inválido" = filled_num(x),
-              "arg. x1 inválido" = filled_num(x1),
-              "arg. x2 inválido" = filled_num(x2),
-              "args. x, x1 incomp" = length(x) == length(x1),
-              "args. x, x2 incomp" = length(x) == length(x2))
-    
+    stopifnot(
+        "arg. x inválido" = filled_num(x),
+        "arg. x1 inválido" = filled_num(x1),
+        "arg. x2 inválido" = filled_num(x2),
+        "args. x, x1 incomp" = length(x) == length(x1),
+        "args. x, x2 incomp" = length(x) == length(x2)
+    )
+
     tf <- x > x1 & x < x2
     if (inclusive) {
-        tf  <- tf | x == x1 | x == x2
+        tf <- tf | x == x1 | x == x2
     }
 
     tf
@@ -291,7 +322,7 @@ num_entre <- function(x, x1 = numeric(), x2 = numeric(),
 #' @description Calcula el cociente y redondea.
 #' @details Los argumentos a los parámetros deben contener el mismo
 #'     número de elementos o, si difieren, uno (numerador o
-#'     denominador) debe ser un escalar. Donde el resultado es
+#'     denominador) debe ser un escalar. Donde el resultado sea
 #'     infinito, devuelve NA.
 #' @param x numeric: numerador
 #' @param y numeric: denominador
@@ -299,19 +330,21 @@ num_entre <- function(x, x1 = numeric(), x2 = numeric(),
 #'     (valor por omisión), no redondea
 #' @return double o NA
 #' @examples
-#' frac(2, 3)
-#' frac(1:3, 3)
-#' frac(1:3, 3:1)
+#' dividir(2, 3)
+#' dividir(1:3, 3)
+#' dividir(1:3, 3:1)
 #' \dontrun{
-#' frac(1:3, 1:2) #-> error
+#' dividir(1:3, 1:2) #-> error
 #' }
 #' @export
 #' @author eddy castellón
 dividir <- function(x = double(), y = double(), dec = NA) {
-    stopifnot("arg. no numerico" = filled_num(x) && filled_num(y),
-              "arg. difiere longitud" = length(x) == length(y) ||
-                  (length(x) > 1 && length(y) == 1) ||
-                  (length(x) == 1 && length(y) > 1))
+    stopifnot(
+        "arg. no numerico" = filled_num(x) && filled_num(y),
+        "arg. difiere longitud" = length(x) == length(y) ||
+            (length(x) > 1 && length(y) == 1) ||
+            (length(x) == 1 && length(y) > 1)
+    )
 
     r <- x / y
     r[is.infinite(r)] <- NA_real_
@@ -319,7 +352,7 @@ dividir <- function(x = double(), y = double(), dec = NA) {
     if (!is.na(dec)) {
         r <- round(r, dec)
     }
-    
+
     r
 }
 
@@ -341,10 +374,9 @@ dividir <- function(x = double(), y = double(), dec = NA) {
 #' @export
 #' @author eddy castellón
 pct <- function(x = numeric(), base = numeric(), dec = 0L) {
-
     stopifnot("arg. inadmisible" = filled_num(x) &&
-                  is.numeric(base))
-    
+        is.numeric(base))
+
     if (is_vacuo(base)) {
         base <- sum(x, na.rm = TRUE)
     }
@@ -369,13 +401,13 @@ pct <- function(x = numeric(), base = numeric(), dec = 0L) {
 #' pct_grupo(1:4, c("a", "a", "b", "b"))
 #' @export
 pct_grupo <- function(x = numeric(), by = numeric(), dec = 0L) {
-
-    stopifnot("arg. inadmisible" = filled_num(x),
-              "arg. inadmisible" = is_scalar0(by) ||
-                  length(by) == length(x),
-              "arg. inadmisible" = filled_num(dec) &&
-                  is_scalar(dec)
-              )
+    stopifnot(
+        "arg. inadmisible" = filled_num(x),
+        "arg. inadmisible" = is_scalar0(by) ||
+            length(by) == length(x),
+        "arg. inadmisible" = filled_num(dec) &&
+            is_scalar(dec)
+    )
 
     if (is_scalar0(by)) {
         list(pct(x, dec = dec))
@@ -420,15 +452,14 @@ pct_grupo <- function(x = numeric(), by = numeric(), dec = 0L) {
 #' @author eddy castellón
 remplazar <- function(x = NULL, busca, buscaen, remplazo,
                       msg = TRUE, toNA = TRUE) {
-
     stopifnot(expres = {
-        "arg. incompat." = filled(buscaen) && filled(remplazo) &&
+        "arg. incompat." <- filled(buscaen) && filled(remplazo) &&
             length(buscaen) == length(remplazo)
-        "arg. incompat." = filled(busca) &&
+        "arg. incompat." <- filled(busca) &&
             mode(busca) == mode(buscaen)
-        "arg. x inadmisible" = is.null(x) ||
+        "arg. x inadmisible" <- is.null(x) ||
             (length(x) == length(busca) &&
-             mode(x) == mode(remplazo))
+                mode(x) == mode(remplazo))
     })
 
     if (is.null(x)) {
@@ -450,7 +481,6 @@ remplazar <- function(x = NULL, busca, buscaen, remplazo,
             message("... ", sum(ii), " remplazos !!")
         }
     }
-    
+
     invisible(x)
 }
-
