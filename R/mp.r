@@ -546,7 +546,7 @@ db_drop.RODBC <- function(x, tb = character()) {
 
 #' save-excel
 #' @description Guarda data.frame en una tabla excel
-#' @details Un libro de excel funcionalmente es una base de datos, en
+#' @details Un libro de excel funcionalmente es una base de datos en
 #'     el que las hojas o pestañas, y los rangos de celdas con nombre,
 #'     juegan el papel de tablas de la base de datos. El argumento
 #'     "tabla" debe hacer referencia a una hoja (los datos se guardan
@@ -554,12 +554,13 @@ db_drop.RODBC <- function(x, tb = character()) {
 #'     previamente definido en el libro excel.
 #'
 #'     El archivo debe existir y no debe estar abierto cuando se
-#'     ejecute la función.
+#'     ejecute la función. La función devuelve (invisible) TRUE o
+#'     FALSE según error durante el proceso.
 #' @param x data.frame
 #' @param tabla character: nombre de la tabla excel
 #' @param file character: nombre del archivo excel
 #' @param xv7 versión 7 de excel (xslx)? TRUE por defecto
-#' @return NULL
+#' @return logical
 #' @seealso save_cel_xcl
 #' @examples
 #' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
@@ -580,10 +581,11 @@ save_xcl <- function(x, tabla = character(), file = character(),
     if (is_rodbc(kk)) {
         db_save(kk, x, tabla)
         db_close(kk)
+        invisible(TRUE)
     } else {
         message("error conexión\n")
+        invisible(FALSE)
     }
-    NULL
 }
 
 #' read-excel
@@ -649,7 +651,7 @@ read_xcl <- function(x, file, xv7 = TRUE) {
 #' @param fila integer: número de la fila; igual a 1 por omisión
 #' @param hoja nombre (character) o número (numeric) de la hoja o
 #'     pestaña que recibirá los datos
-#' @param free logical: liberar memoria (TRUE); FALSE por omisión
+#' @param free logical: liberar memoria (TRUE); TRUE por omisión
 #' @return logical
 #' @seealso save_xcl
 #' @examples
@@ -661,7 +663,7 @@ read_xcl <- function(x, file, xv7 = TRUE) {
 save_cel_xcl <- function(x, file = character(),
                          rfc = character(),
                          col = 1L, fila = 1L,
-                         hoja = 1L, free = FALSE) {
+                         hoja = 1L, free = TRUE) {
     stopifnot(exprs = {
         inherits(x, "data.frame")
         filled_char(file) && is_scalar(file)

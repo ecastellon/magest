@@ -537,7 +537,7 @@ wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
 #' @examples
 #' aa <- data.frame(x = 1:5, y = c(100, 1, 2, 2, 1000),
 #'                  z = c("a", "a", "a", "b", "b"))
-#' (aporte_exceso(aa$y, aa$x, aa$z))
+#' (out_pct(aa$y, aa$x, aa$z))
 #' @export
 out_pct <- function(x, id, by = integer(), cota = 10L,
                            orden = TRUE) {
@@ -593,7 +593,7 @@ out_pct <- function(x, id, by = integer(), cota = 10L,
 #' @param ... argumentos pasados a fun
 #' @return numeric, invisible
 #' @examples
-#' (remplazar_outlier(c(200, 1:5, 1000), 100, mean, trim = 0.1))
+#' (out_remplazo(c(200, 1:5, 1000), 100, mean, trim = 0.1))
 #' @export
 out_remplazo <- function(x, cota = 0.0, fun, mayor = TRUE,
                               msj = FALSE, ...) {
