@@ -260,9 +260,16 @@ ok_fname <- function(x = character()) {
 #' @param ... dos o más vectores
 #' @return integer
 #' @export
-match_g <- function(...) {
+casar <- function(...) {
     x <- alist(...)
+    m <- do.call("match", x)
+    o <- is.na(m)
+    if (any(o)) {
+        message("... no calzan ", sum(o), " de ", length(m), " !!!")
+    }
+    m
 }
+
 
 #' Alias %in%
 #' @description Operado infijo %in% como función
