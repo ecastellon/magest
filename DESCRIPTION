@@ -19,6 +19,6 @@ Suggests:
 Depends:
         magrittr,
         dplyr,
-        foobj
+        magfoo
 Imports:
         RODBC

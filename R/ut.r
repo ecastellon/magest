@@ -198,8 +198,8 @@ tok_str <- function(str) {
 }
 
 #' fabrica código
-#' @description Produce función que genera palabras con prefijo y
-#'     enteros.
+#' @description Produce una función que genera palabras con un prefijo
+#'     seguido de enteros.
 #' @details Crea una función que produce un objeto character con
 #'     prefijo único indicado en parámetro "prf" (por omisión "c"),
 #'     seguido por un entero (parámetro "x") antecedido por
@@ -246,30 +246,81 @@ ok_fname <- function(x = character()) {
 
 ## --- misc ---
 
+#' Par
+#' @description Es número par
+#' @param x numeric
+#' @return logical
+#' @keywords internal
+es_par <- function(x) {
+    stopifnot("arg.x no es numérico" = filled_num(x))
+    x %% 2 == 0
+}
+
 #' Aparear
-#' @description Hace match con varios vectores
-#' @details Para encontrar el "match" de una pareja de vectores con otra pareja
-#' lo común es primero construir vectores adicionales con la función
-#' "interaction" y luego hacer el "match" con los vectores resultantes.
+#' @description Match de dos o más vectores
+#' @details Para encontrar el "match" de una pareja de vectores con
+#'     otra pareja, lo común es primero construir vectores adicionales
+#'     con la función "interaction" y luego hacer el "match" con los
+#'     vectores resultantes.
 #'
-#' Esta función automatiza ese proceso. Recibe un número par de vectores y
-#' construye la interacción de una mitad y de la otra mitad y hace el "match".
-#' Además de manera opcional puede informar cuántos elementos no hicieron
-#' "match".
+#'     Esta función automatiza ese proceso. Recibe un número par de
+#'     vectores y construye la interacción de una mitad y de la otra
+#'     mitad y luego hace el "match". Además, de manera opcional
+#'     informa cuántos elementos de la primera mitad de vectores no
+#'     existen en la otra mitad (no hicieron "match"), y también, de
+#'     manera opcional, devuelve en el atributo "sinpar" el
+#'     correspondiente vector de índices de los que no tienen pareja.
 #'
 #' @param ... dos o más vectores
+#' @param msg logical: si \code{TRUE} produce mensaje de cuántos no
+#'     hacen "match"
+#' @param sinpar logical: si \code{TRUE} agrega el atributo "sinpar"
+#'     al resultado; \code{FALSE} por defecto.
 #' @return integer
+#' @examples
+#' casar(x, y, msg = FALSE)
+#' casar(w, x, y, z)
 #' @export
-casar <- function(...) {
-    x <- alist(...)
+casar <- function(..., msg = TRUE, sinpar = FALSE) {
+    x <- eval(substitute(alist(...)))
+
+    n <- length(x)
+    if (n > 2) {
+        if (!es_par(n)) {
+            warning("... número de argumentos no es par !!!",
+                    call. = FALSE)
+        }
+        m <- seq_len(n)
+        k <- n %/% 2
+        m1 <- head(m, k)
+        m2 <- tail(n, n - k)
+        x <- list(x = Reduce(interaction, x[m1]),
+                  table = Reduce(interaction, x[m2]))
+    }
+    
     m <- do.call("match", x)
     o <- is.na(m)
     if (any(o)) {
-        message("... no calzan ", sum(o), " de ", length(m), " !!!")
+        if (msg) {
+            message("... sin pareja ", sum(o), " de ", length(m), " !!!")
+        }
+        if (sinpar) {
+            attr(m, "sinpar") <- which(o, useNames = FALSE)
+        }
     }
     m
 }
 
+#' Aparear
+#' @description Alias de la función \code{match}
+#' @param x character o numeric
+#' @param y character o numeric
+#' @return integer
+#' @seealso \code{match}, \code{casar}
+#' @export
+parear <- function(x, y) {
+    casar(x, y)
+}
 
 #' Alias %in%
 #' @description Operado infijo %in% como función
@@ -476,12 +527,9 @@ remplazar <- function(x = NULL, busca, buscaen, remplazo,
         }
     }
 
-    mm <- match(busca, buscaen, nomatch = NA, incomparables = NULL)
-    ii <- !is.na(mm)
-    if (any(!ii) && msg) {
-        warning("\n... ", sum(ii), " no se encuentran ...")
-    }
+    mm <- casar(busca, buscaen, msg)
 
+    ii <- !is.na(mm)
     if (any(ii)) {
         x[ii] <- remplazo[mm[ii]]
         if (msg) {
