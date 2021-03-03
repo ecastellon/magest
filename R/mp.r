@@ -2,7 +2,7 @@
 
 ##--- funciones procesamiento de datos ---
 
-#' @import foobj
+#' @import magfoo
 
 #' @export
 set_odb <- function(ob, ...) UseMethod("set_odb")
