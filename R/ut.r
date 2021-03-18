@@ -351,6 +351,18 @@ na0 <- function(x) {
     invisible(x)
 }
 
+#' Cero - NA
+#' @description Convierte a NA los datos igual a cero
+#' @param x numeric
+#' @return numeric
+#' @export
+cero_na <- function(x) {
+    stopifnot("arg. x inválido" = is.numeric(x))
+    na <- ifelse(typeof(x) == "integer", NA_integer_, NA_real_)
+    x[x == 0] <- na
+    invisible(x)
+}
+
 #' Número-entre
 #' @description Comprueba si un número está entre los límites de un
 #'     intervalo
