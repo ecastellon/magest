@@ -296,6 +296,12 @@ casar <- function(..., msg = TRUE, sinpar = FALSE) {
         m2 <- tail(n, n - k)
         x <- list(x = Reduce(interaction, x[m1]),
                   table = Reduce(interaction, x[m2]))
+    } else {
+        if (n == 2) {
+            names(x) <- c("x", "table")
+        } else {
+            x <- list(x = x[[1]], table = x[[1]])
+        }
     }
     
     m <- do.call("match", x)
@@ -527,7 +533,7 @@ remplazar <- function(x = NULL, busca, buscaen, remplazo,
         }
     }
 
-    mm <- casar(busca, buscaen, msg)
+    mm <- match(busca, buscaen)
 
     ii <- !is.na(mm)
     if (any(ii)) {
