@@ -280,7 +280,6 @@ es_par <- function(x) {
 #' @examples
 #' casar(x, y, msg = FALSE)
 #' casar(w, x, y, z)
-#' @export
 casar <- function(..., msg = TRUE, sinpar = FALSE) {
     x <- eval(substitute(alist(...)))
 
@@ -556,4 +555,77 @@ remplazar <- function(x = NULL, busca, buscaen, remplazo,
     }
 
     invisible(x)
+}
+
+#' Redondear
+#' @description Redondear un vector de números de suerte que su suma
+#'     sea igual a un número dado
+#' @details Implementa algoritmo de Dorfleitner & Klein (Statistical
+#'     Papers 40:143-157; 1999)
+#' @param x numeric: números a redondear
+#' @param suma numeric: la suma de los números redondeados (1 por
+#'     omisión)
+#' @param metodo character: uno de "webster" (default), "adams",
+#'     "jefferson" (suficiente la primera letra)
+#' @param q numeric: número entre 0 y 1. Es opcional. Si \code{q = 0}
+#'     es lo mismo que método "adams"; q = 1 es "jefferson"; q = 0.5
+#'     es "webster"
+#' @return integer
+#' @export
+#' @examples
+#' redondear(c(1.7, 1.5, 1.0, 2.6), 8) # -> [1] 2 2 1 3
+#' redondear(c(1.7, 1.5, 1.0, 2.6), 7) # -> [1] 2 1 1 3
+#' redondear(c(1.7, 1.5, 1.0, 2.6), 7, q = 0.3) # -> [1] 2 1 1 3
+#' redondear(c(1.7, 1.5, 1.0, 2.6), 7, q = 0.7) # -> [1] 2 2 1 2
+redondear <- function(x, suma = 100, metodo = "webs",
+                      q = double()){
+
+    ## arithmetic-mean methods
+    ##     Adams: q = 0
+    ##   Webster: q = 0.5
+    ## Jefferson: q = 1
+    ## 0 < q < 1
+    if (!length(q)) {
+        q <- switch(metodo, webs = 0.5,
+                    jeff = 1.0,
+                    adam = 0.0)
+    }
+    
+    n <- length(x)
+    wi <- x / sum(x)
+    
+    ## num. iter. = n / 2
+    nu <- suma + n * (q - 0.5) ## multiplier "óptimo"
+    ni <- nu * wi
+    sp <- seq(floor(min(ni)) - 1L, ceiling(max(ni))) + q
+
+    ## sign post
+    sp  <- seq(min(ni) - 1L, max(ceiling(ni)) + 1L) + q
+    ni <- floor(ni + 1.0 - q)
+    
+    zi <- integer(n)
+    dt <- sum(ni) - suma
+    while (dt != 0) {
+        if (dt <= 0) {
+            dd <- ni / wi
+            sm <- min(dd)
+            if (dt == 0) {
+                ##it <- mxit
+                sx <- max(dd)
+                if (sx == sm) {
+                    zi <- zi + 1L * (dd == sm) - 1L * (dd == sx)
+                }
+            } else {# dt<0
+                nn <- which(dd == sm)
+                ni[nn] <- ni[nn] + 1L
+            }
+        } else {
+            dd <- (ni - q) / wi
+            sx <- max(dd)
+            nn <- which(dd == sx)
+            ni[nn] <- ni[nn] - 1L
+        }
+        dt <- sum(ni) - suma
+    }
+    ni
 }
