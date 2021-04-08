@@ -197,6 +197,17 @@ tok_str <- function(str) {
     strsplit(str, split = "[[:space:],]+")[[1L]]
 }
 
+#' Nombre propio
+#' @description pone en mayúsculas las primeras letras de las palabras
+#' @param x palabra
+#' @examples
+#' a_propio('juan calero') -> 'Juan Calero'
+#' @export
+a_propio <- function(x = character()) {
+    stopifnot("arg. x inválido" = filled_char(x))
+    gsub("\\b([a-z])","\\U\\1", tolower(x), perl = TRUE)
+}
+
 #' fabrica código
 #' @description Produce una función que genera palabras con un prefijo
 #'     seguido de enteros.
