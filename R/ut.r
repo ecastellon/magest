@@ -538,7 +538,7 @@ pct_grupo <- function(x = numeric(), by = numeric(), dec = 0L) {
 #' @author eddy castellón
 remplazar <- function(x = NULL, busca, buscaen, remplazo,
                       msg = TRUE, toNA = TRUE) {
-    stopifnot(expres = {
+    stopifnot(exprs = {
         "arg. incompat." <- filled(buscaen) && filled(remplazo) &&
             length(buscaen) == length(remplazo)
         "arg. incompat." <- filled(busca) &&
@@ -561,7 +561,11 @@ remplazar <- function(x = NULL, busca, buscaen, remplazo,
     if (any(ii)) {
         x[ii] <- remplazo[mm[ii]]
         if (msg) {
-            message("... ", sum(ii), " remplazos !!")
+            message("... ", sum(ii), " remplazos !!!")
+        }
+    } else {
+        if (msg) {
+            message("... ningún remplazo !!!")
         }
     }
 
