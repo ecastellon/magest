@@ -197,15 +197,54 @@ tok_str <- function(str) {
     strsplit(str, split = "[[:space:],]+")[[1L]]
 }
 
-#' Nombre propio
-#' @description pone en mayúsculas las primeras letras de las palabras
-#' @param x palabra
+#' Podar espacios
+#' @description Quita los espacios antes y después de una frase
+#' @param x character
+#' @export
 #' @examples
-#' a_propio('juan calero') -> 'Juan Calero'
+#' podar_str("  poda   extremos") #-> "poda   extremos"
+podar_str <- function(x = character()) {
+    stopifnot("arg. x inválido" = filled_char(x))
+    r <- regexpr("\\b.*\\b", x, perl = TRUE)
+    w <- vector("character", length = length(x))
+    w[r > 0] <- regmatches(x, r)
+    w
+}
+
+#' Sustituir espacios
+#' @description Sustituye una ristra de espacios por uno solo
+#' @param x character
+#' @export
+#' @examples
+#' sin_ristra_sp("   a   veces ") #-> " a veces "
+sin_ristra_sp <- function(x = character()) {
+    stopifnot("arg. x inválido" = filled_char(x))
+    gsub("[[:space:]]+", " ", x)
+}
+
+#' Primera mayúscula
+#' @description En mayúscula la primera letra de una palabra
+#' @param x character
+#' @examples
+#' a_propio('juan calero') #-> 'Juan Calero'
 #' @export
 a_propio <- function(x = character()) {
     stopifnot("arg. x inválido" = filled_char(x))
     gsub("\\b([a-z])","\\U\\1", tolower(x), perl = TRUE)
+}
+
+#' Nombre propio
+#' @description Ajusta las palabras a la forma de un nombre propio
+#' @details Poda el texto, sustituye ristra de espacios y deja la
+#'     primera letra en mayúsculas
+#' @param x character
+#' @return character
+#' @export
+#' @examples
+#' a_propio('  juan   calero  ') #-> 'Juan Calero'
+nombre_propio <- function(x = character()) {
+    stopifnot("arg. x inválido" = filled_char(x))
+    podar_str(x) %>% sin_ristra_sp() %>% a_propio()
 }
 
 #' fabrica código
@@ -570,6 +609,30 @@ remplazar <- function(x = NULL, busca, buscaen, remplazo,
     }
 
     invisible(x)
+}
+
+#' Crear-llenar
+#' @description Crea un nuevo vector y lo llena con elementos tomados
+#'     de otro.
+#' @details Aplica la función remplazar con el param. x igual a NULL,
+#'     para crear un vector del mismo tipo que el del param.
+#'     remplazo, y lo llena con elementos de él cuando hay un match de
+#'     los param. busa y buscaen. Si quedaran datos NA porque
+#'     elementos de busca no se encuentran en buscaen, los sustituye
+#'     por el valor pasado en el parámetro si_na.
+#' @seealso remplazar
+#' @param busca character o numeric: datos a buscar
+#' @param buscaen character o numeric: donde buscar
+#' @param remplazo vector atómico: remplazo de los encontrados
+#' @export
+#' @examples
+#' crear_llenar(c(1, 3, 2), c(2, 1), c(10, 20), -1) #-> c(20, -1, 10)
+crear_llenar <- function(busca, buscaen, remplazo, si_na = NA) {
+    w <- remplazar(NULL, busca, buscaen, remplazo, msg = FALSE)
+    if (!is.na(si_na)) {
+        w[is.na(w)] <- si_na
+    }
+    w
 }
 
 #' Redondear

@@ -257,6 +257,7 @@ db_xcl <- function(file = character(), version7 = TRUE, ronly = TRUE) {
 #'     propiedades del objeto
 #' @param x objeto de clase odb
 #' @return character
+#' @examples
 #' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
 #' "XLConnect"))
 #' db_constr(ox)
@@ -1160,4 +1161,154 @@ get_data.odb <- function(x, qstr = character(), meta = character(),
     if (!ok) ww <- NULL
  
     invisible(ww)
+}
+
+## -- csentry --
+
+#' Parámetros-conexión-RMariaDB
+#' @description Construye lista con los parámetros necesarios para
+#'     conectarse a una base de datos MySQL.
+#' @details Inicia la lista con el valor de las "variables ambiente"
+#'     MYSQLSERVERMAG, MYSQLDB, MYSQLUID, MYSQLPWD, y la modifica con
+#'     los pasados como argumentos. Mensaje de alerta si alguno
+#'     "vacío".
+#' @param ... character: admisibles: "host", "dbname", "user", "pwd"
+#' @return list
+#' @examples
+#' par_conn()
+#' par_conn(dbname = "cspro")
+#' par_conn(user = "pepe", dbname = "data", pwd = "mefistofeles")
+par_conn_mysql <- function(...) {
+    x <- list(host = Sys.getenv("MYSQLSERVERMAG"),
+              dbname = Sys.getenv("MYSQLDB"),
+              user = Sys.getenv("MYSQLUID"),
+              pwd = Sys.getenv("MYSQLPWD"))
+
+    z <- list(...)
+    if (length(z) > 0) {
+        mm <- match(names(x), names(z))
+        no_na <- !is.na(mm)
+        if (any(no_na)) {
+            x[no_na] <- z[mm[no_na]]
+        }
+    }
+
+    if (!all(sapply(x, nzchar))) {
+        warning("... hay parámetros no definidos !!!", call. = FALSE)
+    }
+    
+    x
+}
+
+#' Conectar MySQL
+#' @description Inicia la conexión con la base de datos csentry
+#' @details Si algunos de los argumentos no está en ..., se toma de
+#'     "variables de ambiente"
+#' @seealso par_conn_mysql
+#' @param ... character. Argumentos a la función "dbConnect": host,
+#'     dbname, user, password.
+#' @return objeto DBI o NULL (si la conexión no es válida)
+conn_mysql  <- function(...) {
+    
+    x <- par_conn_mysql(...)
+    
+    con <- RMariaDB::dbConnect(RMariaDB::MariaDB(),
+                               host = x$host, dbname = x$dbname,
+                               user = x$user, password = x$pwd)
+    if (!DBI::dbIsValid(con)) {
+        message("\n... ERROR de conexión !!!")
+        con <- NULL
+    }
+    
+    invisible(con)
+}
+
+#' Leer csentry
+#' @description Lee las variables del campo questionnaire que se
+#'     construye con Csentry, u otros campos de la tabla de la
+#'     encuesta
+#' @details En la base de datos de Cspro, cada encuesta está
+#'     almacenada en una sola tabla con varios campos. El campo
+#'     "questionnaire" contiene los datos de los cuestionarios. Cada
+#'     boleta está almacenada como una sola cadena de caracteres,
+#'     dentro de la cual, las variables ocupan un número determinado
+#'     de caracteres especificado en el diccionario de datos. La
+#'     lectura de questionnaire devuelve un vector character con
+#'     tantos elementos como registros (boletas). Dada esa
+#'     característica, para llevar los datos de las variables a un
+#'     data.frame, una solución es crear un archivo donde cada línea
+#'     corresponda a un registro (boleta), y luego leer los segmentos
+#'     de caracteres que corresponden a las variables, con
+#'     read.fwf. Tener en cuenta que cspro utiliza un campo al inicio
+#'     (de longitud 1) para indicar el tipo de registro. Ver ayuda de
+#'     read.fwf acerca del uso de longitudes negativas para "saltar"
+#'     variables. La función utiliza la librería RMariaDB para leer de
+#'     la base de datos.
+#' @param tab_dict character: nombre de la tabla
+#' @param loncam integer: número de caracteres que ocupa cada variable
+#' @param columnas character: nombre que se le asignarán a las
+#'     variables en el resultado
+#' @param ... character: Argumentos para establecer la conexión (host,
+#'     dbname, userid, password) o la conexión si ya fue establecida
+#'     (con), y el campo que se va leer de la tabla (cam; por omisión,
+#'     "questionnaire").
+#' @seealso conn_mysql, par_conn_mysql
+#' @return data.frame o NULL
+#' @examples
+#' x <- get_data_cspro("caracterizacion_dict", loncam = c(1,
+#'     5, 3, 5, 6, 7, 100), columnas = c("reg", "quest", "tecnico",
+#'     "copiade", "cx", "cy", "informante"))
+#' x <- get_data_cspro("caracterizacion_dict", loncam = c(-1,
+#'     5, 3, 5, 6, 7, 100), columnas = c("quest", "tecnico",
+#'     "copiade", "cx", "cy", "informante"))
+#' 
+#' cn <- conn_mysql()
+#' RMariaDB::dbListTables(cn)
+#' RMariaDB::dbListFields(cn, "hato_dict")
+#' x <- get_data_cspro("hato_dict", con = cn, cam = "id_QUEST")
+#' RMariaDB::dbDisconnect(cn)
+get_data_cspro <- function(tab_dict = character(), loncam = integer(),
+                           columnas = character(), ...) {
+
+    ## -- vale argumentos --
+    ## ninguno "vacío"
+    ## length(loncam) <= length(columnas)
+    ## excepto los anteriores, los demás son escalares
+    dots <- list(...)
+    names_dots <- names(dots)
+    
+    con_dots <- is.element("con", names_dots)
+
+    if (con_dots) {
+        con <- dots$con
+    } else {
+        con <- conn_mysql(...)
+    }
+    
+    if (is.null(con)) {
+        invisible(con)
+    }
+
+    if (is.element("cam", names_dots)) {
+        cam <- dots$cam
+    } else {
+        cam <- "questionnaire"
+    }
+    
+    w <- RMariaDB::dbGetQuery(con, paste("select", cam, "from", tab_dict))
+
+    if (!con_dots) {
+        RMariaDB::dbDisconnect(con)
+    }
+
+    if (cam == "questionnaire") {
+        tf <- tempfile("mg", fileext = ".txt")
+        cat(w[[1]], file = tf, sep = "\n")
+
+        w <- read.fwf(tf, widths = loncam, col.names = columnas)
+
+        unlink(tf)
+    }
+
+    invisible(w)
 }
