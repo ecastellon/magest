@@ -1304,10 +1304,11 @@ get_data_cspro <- function(tab_dict = character(), loncam = integer(),
     }
 
     if (cam == "questionnaire") {
-        tf <- tempfile("mg", fileext = ".txt")
+        tf <- tempfile()
         cat(w[[1]], file = tf, sep = "\n")
 
-        w <- read.fwf(tf, widths = loncam, col.names = columnas)
+        w <- read.fwf(tf, widths = loncam, col.names = columnas,
+                      comment.char = "", stringsAsFactors = FALSE)
 
         unlink(tf)
     }
