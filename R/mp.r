@@ -1208,6 +1208,7 @@ par_conn_mysql <- function(...) {
 #' @param ... character. Argumentos a la función "dbConnect": host,
 #'     dbname, user, password.
 #' @return objeto DBI o NULL (si la conexión no es válida)
+#' @export
 conn_mysql  <- function(...) {
     
     x <- par_conn_mysql(...)
@@ -1229,21 +1230,21 @@ conn_mysql  <- function(...) {
 #'     encuesta
 #' @details En la base de datos de Cspro, cada encuesta está
 #'     almacenada en una sola tabla con varios campos. El campo
-#'     "questionnaire" contiene los datos de los cuestionarios. Cada
-#'     boleta está almacenada como una sola cadena de caracteres,
-#'     dentro de la cual, las variables ocupan un número determinado
-#'     de caracteres especificado en el diccionario de datos. La
-#'     lectura de questionnaire devuelve un vector character con
-#'     tantos elementos como registros (boletas). Dada esa
+#'     "questionnaire" contiene los datos de los cuestionarios. Los
+#'     datos de cada boleta están almacenados como una sola cadena de
+#'     caracteres, dentro de la cual, las variables ocupan un número
+#'     determinado de caracteres especificado en el diccionario de
+#'     datos. La lectura de questionnaire devuelve un vector character
+#'     con tantos elementos como registros (boletas). Dada esa
 #'     característica, para llevar los datos de las variables a un
 #'     data.frame, una solución es crear un archivo donde cada línea
-#'     corresponda a un registro (boleta), y luego leer los segmentos
-#'     de caracteres que corresponden a las variables, con
-#'     read.fwf. Tener en cuenta que cspro utiliza un campo al inicio
-#'     (de longitud 1) para indicar el tipo de registro. Ver ayuda de
-#'     read.fwf acerca del uso de longitudes negativas para "saltar"
-#'     variables. La función utiliza la librería RMariaDB para leer de
-#'     la base de datos.
+#'     del archivo corresponda a un registro (boleta), y luego leer
+#'     los segmentos de caracteres que corresponden a las variables
+#'     con read.fwf. Tener en cuenta que cspro utiliza un campo al
+#'     inicio (de longitud 1) para indicar el tipo de registro. Ver
+#'     ayuda de read.fwf acerca del uso de longitudes negativas para
+#'     "saltar" variables. La función utiliza la librería RMariaDB
+#'     para leer de la base de datos.
 #' @param tab_dict character: nombre de la tabla
 #' @param loncam integer: número de caracteres que ocupa cada variable
 #' @param columnas character: nombre que se le asignarán a las
@@ -1254,6 +1255,7 @@ conn_mysql  <- function(...) {
 #'     "questionnaire").
 #' @seealso conn_mysql, par_conn_mysql
 #' @return data.frame o NULL
+#' @export
 #' @examples
 #' x <- get_data_cspro("caracterizacion_dict", loncam = c(1,
 #'     5, 3, 5, 6, 7, 100), columnas = c("reg", "quest", "tecnico",
