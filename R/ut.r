@@ -205,9 +205,14 @@ tok_str <- function(str) {
 #' podar_str("  poda   extremos") #-> "poda   extremos"
 podar_str <- function(x = character()) {
     stopifnot("arg. x inválido" = filled_char(x))
-    r <- regexpr("\\b.*\\b", x, perl = TRUE)
-    w <- vector("character", length = length(x))
-    w[r > 0] <- regmatches(x, r)
+    if ( is.na(x) ) {
+        w <- x
+    } else {
+        r <- regexpr("\\b.*\\b", x, perl = TRUE)
+        w <- vector("character", length = length(x))
+        ## is.na(x) -> is.na(r) y error en asig. con índice
+        w[r > 0] <- regmatches(x, r)
+    }
     w
 }
 
@@ -412,6 +417,19 @@ cero_na <- function(x) {
     invisible(x)
 }
 
+#' NA a character
+#' @description Convierte los NA_character_ al caracter indicado
+#' @param x character
+#' @param a character: caracter que sustituye a NA
+#' @return character
+#' @export
+na_char <- function(x, a = "") {
+    if ( is.character(x) ) {
+        x[is.na(x)] <- a
+    }
+    invisible(x)
+}
+
 #' Número-entre
 #' @description Comprueba si un número está entre los límites de un
 #'     intervalo
@@ -611,28 +629,48 @@ remplazar <- function(x = NULL, busca, buscaen, remplazo,
     invisible(x)
 }
 
-#' Crear-llenar
-#' @description Crea un nuevo vector y lo llena con elementos tomados
-#'     de otro.
+#' Crear vector
+#' @description Crear vector atómico con elementos tomados de otro
+#'     vector
 #' @details Aplica la función remplazar con el param. x igual a NULL,
 #'     para crear un vector del mismo tipo que el del param.
 #'     remplazo, y lo llena con elementos de él cuando hay un match de
-#'     los param. busa y buscaen. Si quedaran datos NA porque
-#'     elementos de busca no se encuentran en buscaen, los sustituye
-#'     por el valor pasado en el parámetro si_na.
+#'     los param. busca y buscaen. Si quedaran datos NA porque
+#'     elementos de "busca" no se encuentran en "buscaen", los
+#'     sustituye por el valor pasado en el parámetro si_na.
 #' @seealso remplazar
 #' @param busca character o numeric: datos a buscar
 #' @param buscaen character o numeric: donde buscar
 #' @param remplazo vector atómico: remplazo de los encontrados
 #' @export
 #' @examples
-#' crear_llenar(c(1, 3, 2), c(2, 1), c(10, 20), -1) #-> c(20, -1, 10)
-crear_llenar <- function(busca, buscaen, remplazo, si_na = NA) {
+#' iniciar_vec(c(1, 3, 2), c(2, 1), c(10, 20), -1) #-> c(20, -1, 10)
+iniciar_vec <- function(busca, buscaen, remplazo, si_na = NA) {
     w <- remplazar(NULL, busca, buscaen, remplazo, msg = FALSE)
-    if (!is.na(si_na)) {
+    if ( !is.na(si_na) ) {
         w[is.na(w)] <- si_na
     }
     w
+}
+
+#' Orden conforme
+#' @description Pone los elementos de un vector en el mismo orden de
+#'     los elementos de otro vector
+#' @param x vector atómico
+#' @param y vector atómico que contiene a los elementos en x
+#' @return vector
+#' @export
+#' @examples
+#' ordenar_conforme(c(2, 3, 1), c(1, 2, 3, 4)) #-> c(1, 2, 3)
+#' ordenar_conforme(c(2, 3, 1), c(3, 1, 2, 4)) #-> c(3, 1, 2)
+#' ordenar_conforme(c(2, 0, 1), c(1, 2, 3)) #-> c(1, 2)
+ordenar_conforme <- function(x, y) {
+    m <- match(y, x) %>% Filter(Negate(is.na), .)
+    if (length(m) < length(x)) {
+        warning("\n... algunas variables NO ESTÁN en la referencia !!!",
+                call. = FALSE)
+    }
+    x[m]
 }
 
 #' Redondear

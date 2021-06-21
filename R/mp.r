@@ -1174,6 +1174,7 @@ get_data.odb <- function(x, qstr = character(), meta = character(),
 #'     "vacío".
 #' @param ... character: admisibles: "host", "dbname", "user", "pwd"
 #' @return list
+#' @export
 #' @examples
 #' par_conn()
 #' par_conn(dbname = "cspro")
@@ -1209,6 +1210,11 @@ par_conn_mysql <- function(...) {
 #'     dbname, user, password.
 #' @return objeto DBI o NULL (si la conexión no es válida)
 #' @export
+#' @examples
+#' cn <- conn_mysql()
+#' RMariaDB::dbListTables(cn)
+#' RMariaDB::dbListFields(cn, "hato_dict")
+#' RMariaDB::dbDisconnect(cn)
 conn_mysql  <- function(...) {
     
     x <- par_conn_mysql(...)
@@ -1224,94 +1230,232 @@ conn_mysql  <- function(...) {
     invisible(con)
 }
 
+#' Leer-CSpro
+#' @description Lee un campo de una base de datos construida con CSpro
+#' @details Entre los argumentos del parámetro "..." puede estar un
+#'     objeto de conexión a la base de datos (conn); si no está, se
+#'     intentará establecer la conexión con los argumentos a los
+#'     parámetros de la función conn_mysql
+#' @seealso conn_mysql
+#' @param tab_dict character: nombre de la tabla en la base de datos
+#' @param campo character: nombre del campo
+#' @param ... argumentos para los parámetros de la función conn_mysql
+#' @return data.frame o NULL si error en la conexión a la base de
+#'     datos
+#' @export
+#' @examples
+#' x <- par_conn_mysql()
+#' leer_campo_cspro("hatodict", "id_Quest", host = x$host,
+#'                   user = x$user, password = x$pwd,
+#'                   dbname = x$dbname)
+leer_campo_cspro <- function(tab_dict = character(),
+                             campo = "questionnaire", ...) {
+
+    stopifnot("arg. tab_dict inválido" = is.character(tab_dict) &&
+                  length(tab_dict) && nzchar(tab_dict))
+
+    x <- list(...)
+
+    conn_arg <- is.element("conn", names(x))
+    if (conn_arg) {
+        conn <- x$conn
+    } else {
+        conn <- conn_mysql(...)
+    }
+        
+    if (is.null(conn)) {
+        return(conn)
+    }
+
+    ss <- paste("select", campo, "from", tab_dict)
+    w <- tryCatch(RMariaDB::dbGetQuery(conn, ss),
+                  error = function(e) {
+                      message("\n... ERROR durante lectura !!!")
+                      NULL}
+                  )
+
+    if (!conn_arg) {
+        RMariaDB::dbDisconnect(conn)
+    }
+
+    invisible(w)
+}
+
+#' ADVERTENCIA. Cuando el ingreso de los datos se corta antes del
+#' último (por ejemplo cuando es no agrícola) la cadena de caracteres
+#' llega hasta donde se ingresó el último dato. Para la lectura con
+#' read.fwf esto es un inconveniente porque aquellas variables que
+#' están después del último ingresado, se devuelven como character con
+#' "'NA'" (no se "leen" porque el registro se queda corto. Puede ser
+#' que el registro sólo tenga, digamos, 80 caracteres, y la variable
+#' busca leerse a partir del caracter 81 o después). Por otra parte,
+#' si se pasan argumentos al parámetro colClasses, se genera un error
+#' y se detiene el proceso de lectura cuando trata de leer datos que
+#' no existen.
+#'
+#' Una opción es preprocesar el archivo y completar el registro con
+#' caracteres "en blanco", según el número de caracteres especificados
+#' en el diccionario de datos. La opción de leer y procesar después
+#' para ajustar ("'NA'" convertidos a NA y modificar el tipo de la
+#' variable que fue devuelta como character) demandaría más código por
+#' los ajustes.
+#'
+#' Con esa opción, habría que pasar TRUE al parámetro strip.white y ""
+#' a na.strings, para que devuelva NA y no "NA"
+
+
 #' Leer csentry
-#' @description Lee las variables del campo questionnaire que se
-#'     construye con Csentry, u otros campos de la tabla de la
-#'     encuesta
+#' @description Leer los datos de las variables de una encuesta que ha
+#'     sido digitada con CSpro o CSentry
 #' @details En la base de datos de Cspro, cada encuesta está
-#'     almacenada en una sola tabla con varios campos. El campo
-#'     "questionnaire" contiene los datos de los cuestionarios. Los
-#'     datos de cada boleta están almacenados como una sola cadena de
-#'     caracteres, dentro de la cual, las variables ocupan un número
-#'     determinado de caracteres especificado en el diccionario de
-#'     datos. La lectura de questionnaire devuelve un vector character
-#'     con tantos elementos como registros (boletas). Dada esa
-#'     característica, para llevar los datos de las variables a un
-#'     data.frame, una solución es crear un archivo donde cada línea
-#'     del archivo corresponda a un registro (boleta), y luego leer
-#'     los segmentos de caracteres que corresponden a las variables
-#'     con read.fwf. Tener en cuenta que cspro utiliza un campo al
-#'     inicio (de longitud 1) para indicar el tipo de registro. Ver
-#'     ayuda de read.fwf acerca del uso de longitudes negativas para
-#'     "saltar" variables. La función utiliza la librería RMariaDB
-#'     para leer de la base de datos.
-#' @param tab_dict character: nombre de la tabla
-#' @param loncam integer: número de caracteres que ocupa cada variable
+#'     almacenada en una sola tabla. El campo "questionnaire" trae los
+#'     datos de las variables en el cuestionario de la encuesta. Cada
+#'     elemento de ese campo corresponde a un cuestionario, y consiste
+#'     de una sola ristra de caracteres dentro de la cual, los datos
+#'     de una variable ocupan una posición y un número de caracteres
+#'     determinado, ambos definidos en el "diccionario de datos". Para
+#'     cargar los datos en un data.frame, la función manda escribir
+#'     cada elemento de "questionnaire" como una línea de un archivo
+#'     temporal, y después lee la secuencia de caracteres asociada a
+#'     los datos de cada variable, con la función read.fwf. Tener
+#'     presente que cspro utiliza un campo al inicio (de longitud 1)
+#'     para indicar el tipo de registro. Ver ayuda de read.fwf acerca
+#'     del uso de longitudes negativas para "saltar" variables.
+#' @param tab_dict character: nombre de la tabla en la base de datos
+#' @param loncam integer: vector cuyos elementos son el número de
+#'     caracteres que ocupa cada variable
 #' @param columnas character: nombre que se le asignarán a las
 #'     variables en el resultado
+#' @param clase_col character: tipo de vector de la variable
+#'     (character, integer, real, ...). Opcional.
 #' @param ... character: Argumentos para establecer la conexión (host,
 #'     dbname, userid, password) o la conexión si ya fue establecida
-#'     (con), y el campo que se va leer de la tabla (cam; por omisión,
-#'     "questionnaire").
+#'     (conn)
 #' @seealso conn_mysql, par_conn_mysql
 #' @return data.frame o NULL
 #' @export
 #' @examples
-#' x <- get_data_cspro("caracterizacion_dict", loncam = c(1,
-#'     5, 3, 5, 6, 7, 100), columnas = c("reg", "quest", "tecnico",
-#'     "copiade", "cx", "cy", "informante"))
-#' x <- get_data_cspro("caracterizacion_dict", loncam = c(-1,
-#'     5, 3, 5, 6, 7, 100), columnas = c("quest", "tecnico",
-#'     "copiade", "cx", "cy", "informante"))
-#' 
-#' cn <- conn_mysql()
-#' RMariaDB::dbListTables(cn)
-#' RMariaDB::dbListFields(cn, "hato_dict")
-#' x <- get_data_cspro("hato_dict", con = cn, cam = "id_QUEST")
-#' RMariaDB::dbDisconnect(cn)
+#' \dontrun{
+#' x <- get_data_cspro("caracterizacion_dict",
+#'                     loncam = c(1, 5, 3, 5, 6, 7, 100),
+#'                     columnas = c("reg", "quest", "tecnico",
+#'                                  "copiade", "cx", "cy",
+#'                                  "informante"),
+#'                     conn = conn_mysql())
+#' x <- get_data_cspro("caracterizacion_dict",
+#'                     loncam = c(-1, 5, 3, 5, 6, 7, 100),
+#'                     columnas = c("quest", "tecnico", "copiade",
+#'                                  "cx", "cy", "informante"),
+#'                     host = Sys.getenv("host"), user = "eddy",
+#'                     dbname = "bd", password = Sys.getenv("pwd"))
+#' }
 get_data_cspro <- function(tab_dict = character(), loncam = integer(),
-                           columnas = character(), ...) {
+                           columnas = character(),
+                           clase_col = character(), ...) {
 
     ## -- vale argumentos --
     ## ninguno "vacío"
     ## length(loncam) <= length(columnas)
     ## excepto los anteriores, los demás son escalares
-    dots <- list(...)
-    names_dots <- names(dots)
+    w <- leer_campo_cspro(tab_dict, "questionnaire", ...) %>%
+        extract2(1L)
     
-    con_dots <- is.element("con", names_dots)
+    ## preproceso registros caracteres incompletos
+    nc <- sum(abs(loncam))
+    
+    nn <- vapply(w, nchar, 1L, USE.NAMES = FALSE)
+    nr <- (nc - nn) %>%
+        is_greater_than(0) %>%
+        which()
 
-    if (con_dots) {
-        con <- dots$con
-    } else {
-        con <- conn_mysql(...)
+    if ( length(nr) > 0 ) {
+        sp <- rep(" ", length.out = nc) %>%
+            paste0(collapse = "")
+
+        for ( k in nr ) {
+            w[k] <- paste0(w[k], substring(sp, nn[k] + 1L, nc))
+        }
+    }
+
+    if ( !length(clase_col) ) {
+        clase_col <- NA
     }
     
-    if (is.null(con)) {
-        invisible(con)
-    }
-
-    if (is.element("cam", names_dots)) {
-        cam <- dots$cam
-    } else {
-        cam <- "questionnaire"
-    }
-    
-    w <- RMariaDB::dbGetQuery(con, paste("select", cam, "from", tab_dict))
-
-    if (!con_dots) {
-        RMariaDB::dbDisconnect(con)
-    }
-
-    if (cam == "questionnaire") {
-        tf <- tempfile()
-        cat(w[[1]], file = tf, sep = "\n")
-
-        w <- read.fwf(tf, widths = loncam, col.names = columnas,
-                      comment.char = "", stringsAsFactors = FALSE)
-
-        unlink(tf)
-    }
+    tf <- tempfile()
+    cat(w, file = tf, sep = "\n")
+    w <- read.fwf(tf, widths = loncam, col.names = columnas,
+                  colClasses = clase_col,
+                  comment.char = "", strip.white = TRUE,
+                  na.strings = "", stringsAsFactors = FALSE)
+    unlink(tf)
 
     invisible(w)
+}
+
+#' Vector lectura Cspro
+#' @description Construye el vector que se pasa como argumento del
+#'     parámetro "loncam" de la función get_data_cspro
+#' @details Los elementos del vector indican el número de caracteres
+#'     que ocupa una variable dentro de la cadena de caracteres de un
+#'     registro, o bien el número de caracteres (número negativo) que
+#'     hay entre dos variables que no están contigüas en el registro.
+#'
+#'     El parámetro "dic" es un data.frame con las columnas "variable"
+#'     y "length" tomadas del diccionario de datos de la tabla de
+#'     Cspro.
+#' @seealso get_data_cspro, read.fwf
+#' @param x character: nombres de las variables
+#' @param dic data.frame con los nombres de las variables y las
+#'     correspondientes longitudes
+#' @return integer
+#' @export
+#' @examples
+#' dd <- data.frame(variable = c("boleta", "nombre", "direccion"),
+#'                  length = c(5, 50, 100))
+#' longitud_variables(c("boleta", "direccion"), dd) #-> c(5, -50, 100)
+longitud_variables <- function(x = character(), dic) {
+    stopifnot("arg. x inadmisible" = is.character(x) && length(x))
+
+    x <- ordenar_conforme(x, dic$variable)
+    
+    m <- match(x, dic$variable) %>% Filter(Negate(is.na), .)
+    if (length(m) < length(x)) {
+        warning("\n... hay variables que no están en diccionario !!!")
+    }
+    k <- seq.int(min(m), max(m))
+
+    z <- dic$variable[k]
+    y <- dic$length[k]
+
+    ## variables enmedio excluidas ("saltar")
+    ## elementos correspondientes a negativo
+    i <- z %in% x
+    y[!i] <- -y[!i]
+
+    ## acumula rachas de negativos
+    ## y pone a 0 todos menos el acumulado
+    n <- length(y)
+    cum <- 0L
+    while(n > 0) {
+        if (y[n] > 0) {
+            cum <- 0L
+        } else {
+            if (cum < 0) {
+                y[n + 1] <- 0L
+            }
+            cum <- cum + y[n]
+            y[n] <- cum
+        }
+        n <- n - 1
+    }
+
+    y <- y[y != 0L]
+
+    ## variables que "saltar" al inicio
+    if (k[1] > 1) {
+        cum <- cumsum(dic$length[seq_len(k[1] - 1)])
+        y <- purrr::prepend(y, -cum)
+    }
+
+    y
 }
