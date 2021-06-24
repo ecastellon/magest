@@ -1359,6 +1359,14 @@ get_data_cspro <- function(tab_dict = character(), loncam = integer(),
     ## excepto los anteriores, los demás son escalares
     w <- leer_campo_cspro(tab_dict, "questionnaire", ...) %>%
         extract2(1L)
+
+    ## borrados (??)
+    ## d <- leer_campo_cspro(tab_dict, "deleted", ...) %>%
+    ##     extract2(1L) %>% equals(1L)
+
+    ## if ( any(d) ) {
+    ##     w <- w[!d]
+    ## }
     
     ## preproceso registros caracteres incompletos
     nc <- sum(abs(loncam))

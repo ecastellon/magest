@@ -205,14 +205,16 @@ tok_str <- function(str) {
 #' podar_str("  poda   extremos") #-> "poda   extremos"
 podar_str <- function(x = character()) {
     stopifnot("arg. x inválido" = filled_char(x))
-    if ( is.na(x) ) {
-        w <- x
-    } else {
-        r <- regexpr("\\b.*\\b", x, perl = TRUE)
-        w <- vector("character", length = length(x))
-        ## is.na(x) -> is.na(r) y error en asig. con índice
-        w[r > 0] <- regmatches(x, r)
-    }
+
+    ii <- is.na(x)
+    x[ii] <- ""
+    
+    r <- regexpr("\\b.*\\b", x, perl = TRUE)
+    w <- vector("character", length = length(x))
+    ## is.na(x) -> is.na(r) y error en asig. con índice
+    w[r > 0] <- regmatches(x, r)
+    
+    w[ii] <- NA_character_
     w
 }
 
