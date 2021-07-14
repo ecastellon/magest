@@ -1281,27 +1281,27 @@ leer_campo_cspro <- function(tab_dict = character(),
     invisible(w)
 }
 
-#' ADVERTENCIA. Cuando el ingreso de los datos se corta antes del
-#' último (por ejemplo cuando es no agrícola) la cadena de caracteres
-#' llega hasta donde se ingresó el último dato. Para la lectura con
-#' read.fwf esto es un inconveniente porque aquellas variables que
-#' están después del último ingresado, se devuelven como character con
-#' "'NA'" (no se "leen" porque el registro se queda corto. Puede ser
-#' que el registro sólo tenga, digamos, 80 caracteres, y la variable
-#' busca leerse a partir del caracter 81 o después). Por otra parte,
-#' si se pasan argumentos al parámetro colClasses, se genera un error
-#' y se detiene el proceso de lectura cuando trata de leer datos que
-#' no existen.
-#'
-#' Una opción es preprocesar el archivo y completar el registro con
-#' caracteres "en blanco", según el número de caracteres especificados
-#' en el diccionario de datos. La opción de leer y procesar después
-#' para ajustar ("'NA'" convertidos a NA y modificar el tipo de la
-#' variable que fue devuelta como character) demandaría más código por
-#' los ajustes.
-#'
-#' Con esa opción, habría que pasar TRUE al parámetro strip.white y ""
-#' a na.strings, para que devuelva NA y no "NA"
+## ' ADVERTENCIA. Cuando el ingreso de los datos se corta antes del
+## ' último (por ejemplo cuando es no agrícola) la cadena de caracteres
+## ' llega hasta donde se ingresó el último dato. Para la lectura con
+## ' read.fwf esto es un inconveniente porque aquellas variables que
+## ' están después del último ingresado, se devuelven como character con
+## ' "'NA'" (no se "leen" porque el registro se queda corto. Puede ser
+## ' que el registro sólo tenga, digamos, 80 caracteres, y la variable
+## ' busca leerse a partir del caracter 81 o después). Por otra parte,
+## ' si se pasan argumentos al parámetro colClasses, se genera un error
+## ' y se detiene el proceso de lectura cuando trata de leer datos que
+## ' no existen.
+## '
+## ' Una opción es preprocesar el archivo y completar el registro con
+## ' caracteres "en blanco", según el número de caracteres especificados
+## ' en el diccionario de datos. La opción de leer y procesar después
+## ' para ajustar ("'NA'" convertidos a NA y modificar el tipo de la
+## ' variable que fue devuelta como character) demandaría más código por
+## ' los ajustes.
+## '
+## ' Con esa opción, habría que pasar TRUE al parámetro strip.white y ""
+## ' a na.strings, para que devuelva NA y no "NA"
 
 
 #' Leer csentry

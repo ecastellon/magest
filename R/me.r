@@ -291,7 +291,7 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
         dfq  <- select(dft, one_of(c(cues, cc))) %>%
             inner_join(dfq, ., by = cues)
 
-        if (nn <- abs(nn - nrow(dfq)) != 0) {
+        if ((nn <- abs(nn - nrow(dfq))) != 0) {
             warning(paste("\n... los data.frames difieren en", nn,
                           " filas !!!"), call. = FALSE)
             stopifnot("sin datos dfq" = nn > 0)
