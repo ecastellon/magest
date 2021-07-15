@@ -1092,7 +1092,7 @@ xsql_t <- function(x = character(), cam = character(),
         "arg. cam no mult. nvb" = length(cam) %% length(nvb) == 0
         "arg. cid inadmisible" = is_vacuo(cid) || is_scalar_name(cid)
         "arg. idc inadmisible" = (is_vacuo(idc) && is_vacuo(cid)) ||
-            ((filled_num(idc) || is_name(idc)) && filled(cid) &&
+            ((filled_int(idc) || filled_char(idc)) && filled(cid) &&
              length(cam) == length(nvb) * length(idc))
         "arg. idr inadmisible" = is_scalar_name(idr)
     })
