@@ -9,9 +9,9 @@ set_odb <- function(ob, ...) UseMethod("set_odb")
 #' @export
 odb_check <- function(ob, ...) UseMethod("odb_check")
 #' @export
-get_data <- function(ob, ...) UseMethod("get_data")
-#' @export
 get_atr <- function(x, atr) UseMethod("get_atr")
+#' @export
+get_data <- function(ob, ...) UseMethod("get_data")
 #' @export
 db_constr <- function(ob) UseMethod("db_constr")
 #' @export
@@ -124,6 +124,20 @@ str.odb <- function(x) {
     print(x)
 }
 
+#' Get odb property
+#' @description devuelve una propiedad
+#' @param x objeto odb
+#' @param atr character: atributo o propiedad
+#' @return valor atributo o NA
+#' @examples
+#' ob <- odb(server = "{SQL Server}", database = "db")
+#' get_atr(ob, "server")
+#' @export
+get_atr.odb <- function(x, atr){
+    stopifnot("arg atr inadmisible" = filled_char(atr))
+    ifelse(is.element(atr, names(x)), x[[atr]], NA_character_)
+}
+
 #' Modificar odb
 #' @description Modifica o agrega una o más propiedades a un objeto
 #'     odb. Las propiedades previamente definidas son actualizadas a
@@ -143,19 +157,6 @@ set_odb.odb <- function(x, ...) {
     zz <- c(x[setdiff(cc, names(xx))], list(...))
     class(zz) <- class(x)
     invisible(zz)
-}
-
-#' Get odb property
-#' @description devuelve una propiedad
-#' @param x objeto odb
-#' @param atr character: atributo o propiedad
-#' @return valor atributo o NA
-#' ob <- odb(server = "{SQL Server}", database = "db")
-#' get_atr(ob, "server")
-#' @export
-get_atr.odb <- function(x, atr){
-    stopifnot("arg atr inadmisible" = filled_char(atr))
-    ifelse(is.element(atr, names(x)), x[[atr]], NA_character_)
 }
 
 #' Check - odb
@@ -407,6 +408,7 @@ tabla_exists.RODBC <- function(x, tb = character()) {
 #' @param x objeto RODBC
 #' @param tb character: nombre de la tabla
 #' @return character o NULL
+#' @examples
 #' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
 #' "XLConnect"))
 #' op <- db_open(ox)
@@ -437,6 +439,7 @@ db_columnas.RODBC <- function(x, tb = character()) {
 #'     sin límite, por defecto
 #' @param ... otros parámetros de \code{sqlGetResults}
 #' @return data.frame (invisible) o el mensaje de error
+#' @examples
 #' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
 #' "XLConnect"))
 #' op <- db_open(ox)
@@ -473,6 +476,7 @@ db_qry.RODBC <- function(x, xs = character(), strfac = FALSE,
 #' @param ... otros parámetros de \code{sqlGetResults} o
 #'     \code{sqlQuery}
 #' @return data.frame (invisible) o el mensaje de error
+#' @examples
 #' ox <- db_xcl(system.file("demofiles/mydata.xlsx", package =
 #' "XLConnect"))
 #' op <- db_open(ox)
@@ -1126,13 +1130,13 @@ xsql_t <- function(x = character(), cam = character(),
 #'     resultado. Todos por defecto.
 #' @param ... argumentos adicionales para la función quitar_0
 #' @return data.frame o NULL
+#' @export
 #' @examples
 #' fi <- system.file("demofiles/multiregion.xlsx", package =
 #' "XLConnect")
 #' ob <- db_xcl(fi)
 #' ww <- get_data(ob,
 #'          "select year, days from calendar where year < 2002")
-#' @export
 get_data.odb <- function(x, qstr = character(), meta = character(),
                          sin_0 = FALSE, na_0 = FALSE, max = 0, ...) {
     stopifnot("arg. qstr inadmisible" = filled_char(qstr) &&
@@ -1162,6 +1166,33 @@ get_data.odb <- function(x, qstr = character(), meta = character(),
  
     invisible(ww)
 }
+
+#' Datos-encuesta
+#' @description Devuelve los datos que produce una consulta SQL, y de
+#'     manera opcional, filtra los datos no igual a cero, remplaza NA
+#'     por ceros y atribuye metadatos.
+#' @param x objeto odb
+#' @param qstr character: expresión de consulta SQL
+#' @param meta character: metadatos
+#' @param sin_0 logical: filtrar los registros con datos diferentes de
+#'     0? FALSE por defecto
+#' @param na_0 logical: convierte columnas numéricas de NA a cero?
+#'     FALSE por defecto
+#' @param max numeric: número máximo de registros en el
+#'     resultado. Todos por defecto.
+#' @param ... argumentos adicionales para la función quitar_0
+#' @return data.frame o NULL
+#' @keywords internal
+#' @examples
+#' fi <- system.file("demofiles/multiregion.xlsx", package =
+#' "XLConnect")
+#' ob <- db_xcl(fi)
+#' ww <- get_data(ob,
+#'          "select year, days from calendar where year < 2002")
+get_dat.odb <- function(...) {
+    message("Use get_data" )
+}
+
 
 ## -- csentry --
 
@@ -1230,7 +1261,7 @@ conn_mysql  <- function(...) {
     invisible(con)
 }
 
-#' Leer-CSpro
+#' Campo-CSpro
 #' @description Lee un campo de una base de datos construida con CSpro
 #' @details Entre los argumentos del parámetro "..." puede estar un
 #'     objeto de conexión a la base de datos (conn); si no está, se
@@ -1303,8 +1334,7 @@ leer_campo_cspro <- function(tab_dict = character(),
 ## ' Con esa opción, habría que pasar TRUE al parámetro strip.white y ""
 ## ' a na.strings, para que devuelva NA y no "NA"
 
-
-#' Leer csentry
+#' Leer-CSpro
 #' @description Leer los datos de las variables de una encuesta que ha
 #'     sido digitada con CSpro o CSentry
 #' @details En la base de datos de Cspro, cada encuesta está
@@ -1320,7 +1350,7 @@ leer_campo_cspro <- function(tab_dict = character(),
 #'     los datos de cada variable, con la función read.fwf. Tener
 #'     presente que cspro utiliza un campo al inicio (de longitud 1)
 #'     para indicar el tipo de registro. Ver ayuda de read.fwf acerca
-#'     del uso de longitudes negativas para "saltar" variables.
+#'     del uso de longitudes negativas para "saltar" variables
 #' @param tab_dict character: nombre de la tabla en la base de datos
 #' @param loncam integer: vector cuyos elementos son el número de
 #'     caracteres que ocupa cada variable
@@ -1335,7 +1365,7 @@ leer_campo_cspro <- function(tab_dict = character(),
 #' @return data.frame o NULL
 #' @export
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' x <- get_data_cspro("caracterizacion_dict",
 #'                     loncam = c(1, 5, 3, 5, 6, 7, 100),
 #'                     columnas = c("reg", "quest", "tecnico",
@@ -1347,8 +1377,7 @@ leer_campo_cspro <- function(tab_dict = character(),
 #'                     columnas = c("quest", "tecnico", "copiade",
 #'                                  "cx", "cy", "informante"),
 #'                     host = Sys.getenv("host"), user = "eddy",
-#'                     dbname = "bd", password = Sys.getenv("pwd"))
-#' }
+#'                     dbname = "bd", password = Sys.getenv("pwd"))}
 get_data_cspro <- function(tab_dict = character(), loncam = integer(),
                            columnas = character(),
                            clase_col = character(), ...) {
@@ -1398,6 +1427,54 @@ get_data_cspro <- function(tab_dict = character(), loncam = integer(),
     unlink(tf)
 
     invisible(w)
+}
+
+#' Leer-CSpro
+#' @description Leer los datos de las variables de una encuesta que ha
+#'     sido digitada con CSpro o CSentry
+#' @details En la base de datos de Cspro, cada encuesta está
+#'     almacenada en una sola tabla. El campo "questionnaire" trae los
+#'     datos de las variables en el cuestionario de la encuesta. Cada
+#'     elemento de ese campo corresponde a un cuestionario, y consiste
+#'     de una sola ristra de caracteres dentro de la cual, los datos
+#'     de una variable ocupan una posición y un número de caracteres
+#'     determinado, ambos definidos en el "diccionario de datos". Para
+#'     cargar los datos en un data.frame, la función manda escribir
+#'     cada elemento de "questionnaire" como una línea de un archivo
+#'     temporal, y después lee la secuencia de caracteres asociada a
+#'     los datos de cada variable, con la función read.fwf. Tener
+#'     presente que cspro utiliza un campo al inicio (de longitud 1)
+#'     para indicar el tipo de registro. Ver ayuda de read.fwf acerca
+#'     del uso de longitudes negativas para "saltar" variables
+#' @param tab_dict character: nombre de la tabla en la base de datos
+#' @param loncam integer: vector cuyos elementos son el número de
+#'     caracteres que ocupa cada variable
+#' @param columnas character: nombre que se le asignarán a las
+#'     variables en el resultado
+#' @param clase_col character: tipo de vector de la variable
+#'     (character, integer, real, ...). Opcional.
+#' @param ... character: Argumentos para establecer la conexión (host,
+#'     dbname, userid, password) o la conexión si ya fue establecida
+#'     (conn)
+#' @seealso conn_mysql, par_conn_mysql
+#' @return data.frame o NULL
+#' @keywords internal
+#' @examples
+#' \donttest{
+#' x <- get_data_cspro("caracterizacion_dict",
+#'                     loncam = c(1, 5, 3, 5, 6, 7, 100),
+#'                     columnas = c("reg", "quest", "tecnico",
+#'                                  "copiade", "cx", "cy",
+#'                                  "informante"),
+#'                     conn = conn_mysql())
+#' x <- get_data_cspro("caracterizacion_dict",
+#'                     loncam = c(-1, 5, 3, 5, 6, 7, 100),
+#'                     columnas = c("quest", "tecnico", "copiade",
+#'                                  "cx", "cy", "informante"),
+#'                     host = Sys.getenv("host"), user = "eddy",
+#'                     dbname = "bd", password = Sys.getenv("pwd"))}
+get_dat_cspro <- function(...) {
+    message("Usar get_data_cspro !!!" )
 }
 
 #' Vector lectura Cspro
