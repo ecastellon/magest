@@ -1352,8 +1352,8 @@ leer_campo_cspro <- function(tab_dict = character(),
 #'     para indicar el tipo de registro. Ver ayuda de read.fwf acerca
 #'     del uso de longitudes negativas para "saltar" variables
 #' @param tab_dict character: nombre de la tabla en la base de datos
-#' @param loncam integer: vector cuyos elementos son el número de
-#'     caracteres que ocupa cada variable
+#' @param dat_dict data.frame: diccionario de datos con las columnas
+#'     variable y length (caracteres ocupados por la variable)
 #' @param columnas character: nombre que se le asignarán a las
 #'     variables en el resultado
 #' @param clase_col character: tipo de vector de la variable
@@ -1367,18 +1367,18 @@ leer_campo_cspro <- function(tab_dict = character(),
 #' @examples
 #' \donttest{
 #' x <- get_data_cspro("caracterizacion_dict",
-#'                     loncam = c(1, 5, 3, 5, 6, 7, 100),
+#'                     dat_dict = dicc,
 #'                     columnas = c("reg", "quest", "tecnico",
 #'                                  "copiade", "cx", "cy",
 #'                                  "informante"),
 #'                     conn = conn_mysql())
 #' x <- get_data_cspro("caracterizacion_dict",
-#'                     loncam = c(-1, 5, 3, 5, 6, 7, 100),
+#'                     dat_dict = dicc,
 #'                     columnas = c("quest", "tecnico", "copiade",
 #'                                  "cx", "cy", "informante"),
 #'                     host = Sys.getenv("host"), user = "eddy",
 #'                     dbname = "bd", password = Sys.getenv("pwd"))}
-get_data_cspro <- function(tab_dict = character(), loncam = integer(),
+get_data_cspro <- function(tab_dict = character(), dat_dict,
                            columnas = character(),
                            clase_col = character(), ...) {
 
@@ -1398,6 +1398,7 @@ get_data_cspro <- function(tab_dict = character(), loncam = integer(),
     ## }
     
     ## preproceso registros caracteres incompletos
+    loncam <- longitud_variables(columnas, dat_dict)
     nc <- sum(abs(loncam))
     
     nn <- vapply(w, nchar, 1L, USE.NAMES = FALSE)
@@ -1417,7 +1418,8 @@ get_data_cspro <- function(tab_dict = character(), loncam = integer(),
     if ( !length(clase_col) ) {
         clase_col <- NA
     }
-    
+
+    #' alternativa es utilizar substring para extraer las variables
     tf <- tempfile()
     cat(w, file = tf, sep = "\n")
     w <- read.fwf(tf, widths = loncam, col.names = columnas,
@@ -1447,8 +1449,8 @@ get_data_cspro <- function(tab_dict = character(), loncam = integer(),
 #'     para indicar el tipo de registro. Ver ayuda de read.fwf acerca
 #'     del uso de longitudes negativas para "saltar" variables
 #' @param tab_dict character: nombre de la tabla en la base de datos
-#' @param loncam integer: vector cuyos elementos son el número de
-#'     caracteres que ocupa cada variable
+#' @param dat_dict data.frame: diccionario de datos con las columnas
+#'     variable y length (caracteres ocupados por la variable)
 #' @param columnas character: nombre que se le asignarán a las
 #'     variables en el resultado
 #' @param clase_col character: tipo de vector de la variable
@@ -1461,14 +1463,13 @@ get_data_cspro <- function(tab_dict = character(), loncam = integer(),
 #' @keywords internal
 #' @examples
 #' \donttest{
-#' x <- get_data_cspro("caracterizacion_dict",
-#'                     loncam = c(1, 5, 3, 5, 6, 7, 100),
+#' x <- get_data_cspro("caracterizacion_dict", dicc,
 #'                     columnas = c("reg", "quest", "tecnico",
 #'                                  "copiade", "cx", "cy",
 #'                                  "informante"),
 #'                     conn = conn_mysql())
 #' x <- get_data_cspro("caracterizacion_dict",
-#'                     loncam = c(-1, 5, 3, 5, 6, 7, 100),
+#'                     dat_dict = dicc,
 #'                     columnas = c("quest", "tecnico", "copiade",
 #'                                  "cx", "cy", "informante"),
 #'                     host = Sys.getenv("host"), user = "eddy",
