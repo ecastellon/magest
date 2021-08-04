@@ -292,8 +292,10 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
             inner_join(dfq, ., by = cues)
 
         if ((nn <- abs(nn - nrow(dfq))) != 0) {
-            warning(paste("\n... los data.frames difieren en", nn,
-                          " filas !!!"), call. = FALSE)
+            warning(paste("\n... antes y después de join con",
+                          "d.f tierra, el d.f quest",
+                          "difiere en", nn, "filas !!!"),
+                    call. = TRUE)
             stopifnot("sin datos dfq" = nn > 0)
         }
     }
