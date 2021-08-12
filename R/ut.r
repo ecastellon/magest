@@ -329,7 +329,7 @@ es_par <- function(x) {
 #'     correspondiente vector de índices de los que no tienen pareja.
 #'
 #' @param ... dos o más vectores
-#' @param msg logical: si \code{TRUE} produce mensaje de cuántos no
+#' @param msg logical: si \code{TRUE} manda mensaje de cuántos no
 #'     hacen "match"
 #' @param sinpar logical: si \code{TRUE} agrega el atributo "sinpar"
 #'     al resultado; \code{FALSE} por defecto.
@@ -338,26 +338,28 @@ es_par <- function(x) {
 #' casar(x, y, msg = FALSE)
 #' casar(w, x, y, z)
 casar <- function(..., msg = TRUE, sinpar = FALSE) {
-    x <- eval(substitute(alist(...)))
+    ##x <- eval(substitute(alist(...)))
+    x <- list(...)
 
     n <- length(x)
+    if (n == 1 ) {
+        return(seq_along(x[[1]]))
+    }
+    
+    
     if (n > 2) {
         if (!es_par(n)) {
-            warning("... número de argumentos no es par !!!",
+            warning("... casar(...) número de argumentos no es par !!!",
                     call. = FALSE)
         }
         m <- seq_len(n)
         k <- n %/% 2
         m1 <- head(m, k)
-        m2 <- tail(n, n - k)
+        m2 <- tail(m, n - k)
         x <- list(x = Reduce(interaction, x[m1]),
                   table = Reduce(interaction, x[m2]))
     } else {
-        if (n == 2) {
-            names(x) <- c("x", "table")
-        } else {
-            x <- list(x = x[[1]], table = x[[1]])
-        }
+        names(x) <- c("x", "table")
     }
     
     m <- do.call("match", x)
@@ -385,7 +387,7 @@ parear <- function(x, y) {
 }
 
 #' Alias %in%
-#' @description Operado infijo %in% como función
+#' @description Operador infijo %in% como función
 #' @param x vector
 #' @param y vector
 #' @return logical
