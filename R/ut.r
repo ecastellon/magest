@@ -337,6 +337,7 @@ es_par <- function(x) {
 #' @examples
 #' casar(x, y, msg = FALSE)
 #' casar(w, x, y, z)
+#' @export
 casar <- function(..., msg = TRUE, sinpar = FALSE) {
     ##x <- eval(substitute(alist(...)))
     x <- list(...)
@@ -748,4 +749,58 @@ redondear <- function(x, suma = 100, metodo = "webs",
         dt <- sum(ni) - suma
     }
     ni
+}
+
+## -- validación
+
+#' Positivo
+#' @description Es número positivo?
+#' @param x numeric
+#' @return logical
+#' @export
+es_pos <- function(x) {
+    na0(x) > 0
+}
+
+#' Si-entonces
+#' @description Si los datos de una variable son positivos, los
+#'     correspondientes de otra también lo son (condicional)
+#' @param x numeric: antecedente
+#' @param y numeric: consecuente
+#' @return logical
+#' @export
+ypos_si_xpos <- function(x, y) {
+    es_pos(y) | !es_pos(x)
+}
+
+#' equivalencia
+#' @description Si los datos de una variable son positivos, los
+#'     correspondientes de otra también los son, y viceversa
+#' @param x numeric
+#' @param y numeric
+#' @return logical
+#' @export
+ypos_ssi_xpos <- function(x, y) {
+    ypos_si_xpos(x, y) & ypos_si_xpos(y, x)
+}
+
+#' Decil
+#' @description Deciles de una variable
+#' @param x numeric
+#' @param positivos logical: hace el cálculo sólo con los números
+#'     positivos de la variable. TRUE por omisión.
+#' @return numeric
+#' @export
+decil <- function(x, positivos = TRUE) {
+    if (positivos) {
+        ii <- x > 0
+        if (any(ii)) {
+            quantile(x[ii], seq(0, 1, 0.1))
+        } else {
+            warning("!!! ningún elemento POSITIVO")
+            NA_real_
+        }
+    } else {
+        quantile(x, seq(0, 1, 0.1))
+    }
 }

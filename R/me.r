@@ -404,6 +404,32 @@ df_fxp <- function(dfq, dfp, qres, ccon = "c5000", cues = "quest",
     invisible(wq)
 }
 
+#' Estratos-puntos
+#' @description Regresa el data frame con el número actualizado de
+#'     puntos en los estratos
+#' @details El data.frame de los estratos tiene columnas «dpto»,
+#'     «estrato» y «puntos», que traen el número de puntos asignados a
+#'     los estratos de cada departamento. El data.frame de los puntos
+#'     tiene columnas «dpt» y «estrato» que indican el departamento y
+#'     estrato al que está asignado cada punto de la muestra. La
+#'     función modifica la columna «puntos» del data.frame de los
+#'     estratos, con el número de puntos por estrato y departamento
+#'     calculado con los datos en el data.frame de puntos de la
+#'     muestra.
+#' @param es data frame con los datos de los estratos
+#' @param pun data.frame con los puntos que conforman la muestra
+#' @return data.frame
+puntos_estratos <- function(es, pun) {
+    ne <- group_by(pun, dpt, estrato) %>%
+        summarise(n = n()) %>%
+        ungroup()
+
+    mm <- match(interaction(es$dpto, es$estrato),
+                interaction(ne$dpt, ne$estrato))
+    es["puntos"] <- ne$n[mm]
+    invisible(es)
+}
+
 ## -- estimados --
 
 #' calibración

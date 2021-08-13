@@ -812,6 +812,95 @@ read_cel_xcl <- function(file = character(),
     invisible(df)
 }
 
+#' Guardar-excel
+#' @description Escribir data.frame en archivo excel
+#' @details Utiliza funciones de la librería «openxlsx» para guardar
+#'     un data.frame en archivo excel. No es permitido escribir sobre
+#'     celdas con datos.
+#' @param x data.frame
+#' @param archivo character: archivo excel
+#' @param hoja character: hoja del archivo donde se va escribir. Si no
+#'     existe, se agrega al libro excel. Si no se pasa un nombre, se
+#'     agrega una nueva de nombre "Hojaxx", donde "xx" son números.
+#' @param sobre_hoja logical: indicar que acepta escribir en una hoja
+#'     que ya existe. FALSE por omisión.
+#' @param columna integer: número de la columna de la celda superior
+#'     izquierda de la tabla donde se guardarán los datos
+#' @param fila integer: número de la fila
+#' @param el_dia logical: Escribir una celda con la fecha y hora
+#'     cuando se escribieron los datos?. TRUE por omisión
+#' @return nada
+#' @export
+guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
+                          fila = 1L, columna = 1L,
+                          el_dia = TRUE) {
+    ## verificar que sea hoja válida
+    ## verificar hoja existe
+    ## anunciar que se sobrescribirán datos
+    ## opción para sobrescribir?
+    if (file.exists(archivo)) {
+        wb <- openxlsx::loadWorkbook(archivo)
+        sh <- openxlsx::sheets(wb) %>% tolower( )
+        if (nzchar(hoja)) {
+            if ( is.element(tolower(hoja), sh) ) {
+                warning("!!! hoja excel «", hoja, "» ya EXISTE",
+                        call. = FALSE)
+                stopifnot("sobrescribir-hoja" = sobre_hoja)
+            } else {
+                openxlsx::addWorksheet(wb, hoja)
+            }
+        } else {
+            nh <- length(sh) + 1L
+            hoja <- paste0("Hoja", nh)
+            while(is.element(hoja, sh)) {
+                nh <- nh + 1L
+                hoja <- paste0("H", nh)
+            }
+            openxlsx::addWorksheet(wb, hoja)
+        }
+    } else {
+        wb <- openxlsx::createWorkbook( )
+        if (nzchar(hoja)) {
+            openxlsx::addWorksheet(wb, hoja)
+        } else {
+            hoja <- 1L
+        }
+    }
+    
+    if (el_dia) {
+        ss <- format(Sys.time( ), "%d.%b%Y:%I:%M%p")
+        openxlsx::writeData(wb, hoja, ss, columna, fila)
+        fila <- fila + 1L
+    }
+
+    openxlsx::writeDataTable(wb, hoja, x, columna, fila)
+    openxlsx::saveWorkbook(wb, archivo,
+                           overwrite = TRUE, returnValue = TRUE)
+}
+
+#' Guardar-excel
+#' @description Escribir data.frame en archivo excel
+#' @details Utiliza funciones de la librería «openxlsx» para guardar
+#'     un data.frame en archivo excel. No es permitido escribir sobre
+#'     celdas con datos.
+#' @param x data.frame
+#' @param archivo character: archivo excel
+#' @param hoja character: hoja del archivo donde se va escribir. Si no
+#'     existe, se agrega al libro excel. Si no se pasa un nombre, se
+#'     agrega una nueva de nombre "Hojaxx", donde "xx" son números.
+#' @param sobre_hoja logical: indicar que acepta escribir en una hoja
+#'     que ya existe. FALSE por omisión.
+#' @param columna integer: número de la columna de la celda superior
+#'     izquierda de la tabla donde se guardarán los datos
+#' @param fila integer: número de la fila
+#' @param el_dia logical: Escribir una celda con la fecha y hora
+#'     cuando se escribieron los datos?. TRUE por omisión
+#' @return nada
+#' @export
+leer_excel <- function( ) {
+    
+}
+
 ##--- expresiones SQL ---
 
 #' SQL-expresión
