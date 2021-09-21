@@ -1219,13 +1219,11 @@ xsql_t <- function(x = character(), cam = character(),
 #'     resultado. Todos por defecto.
 #' @param ... argumentos adicionales para la función quitar_0
 #' @return data.frame o NULL
-#' @export
 #' @examples
-#' fi <- system.file("demofiles/multiregion.xlsx", package =
-#' "XLConnect")
+#' fi <- system.file("demofiles/multiregion.xlsx", package = "XLConnect")
 #' ob <- db_xcl(fi)
-#' ww <- get_data(ob,
-#'          "select year, days from calendar where year < 2002")
+#' ww <- get_data(ob, "select year, days from calendar where year < 2002")
+#' @export
 get_data.odb <- function(x, qstr = character(), meta = character(),
                          sin_0 = FALSE, na_0 = FALSE, max = 0, ...) {
     stopifnot("arg. qstr inadmisible" = filled_char(qstr) &&
@@ -1350,6 +1348,13 @@ conn_mysql  <- function(...) {
     invisible(con)
 }
 
+#' @export
+close_mysql <- function(x) {
+    if (inherits(x, "MariaDBConnection")) {
+        RMariaDB::dbDisconnect(x)
+    }
+}
+
 #' Campo-CSpro
 #' @description Lee un campo de una base de datos construida con CSpro
 #' @details Entre los argumentos del parámetro "..." puede estar un
@@ -1368,6 +1373,9 @@ conn_mysql  <- function(...) {
 #' leer_campo_cspro("hatodict", "id_Quest", host = x$host,
 #'                   user = x$user, password = x$pwd,
 #'                   dbname = x$dbname)
+#'
+#' cn <- conn_mysql()
+#' leer_campo_cspro("hatodict", "id_Quest", conn=cn)
 leer_campo_cspro <- function(tab_dict = character(),
                              campo = "questionnaire", ...) {
 

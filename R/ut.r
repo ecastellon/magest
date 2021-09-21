@@ -37,6 +37,20 @@ is_scalar0 <- function(x) {
     length(x) <= 1L
 }
 
+#' no na
+#' @description No es NA
+#' @param x vector
+#' @return logical
+#' @export
+no_na <- function(x) !is.na(x)
+
+#' ningún NA
+#' @description Ningún elemento es NA
+#' @param x vector
+#' @return logical
+#' @export
+ningun_na <- function(x) !anyNA(x)
+
 #' length
 #' @description vector has length greater than zero?
 #' @param x vector
@@ -450,13 +464,17 @@ na_char <- function(x, a = "") {
 #' @export
 num_entre <- function(x, x1 = numeric(), x2 = numeric(),
                       inclusive = FALSE) {
-    stopifnot(
-        "arg. x inválido" = filled_num(x),
-        "arg. x1 inválido" = filled_num(x1),
-        "arg. x2 inválido" = filled_num(x2),
-        "args. x, x1 incomp" = length(x) == length(x1),
-        "args. x, x2 incomp" = length(x) == length(x2)
-    )
+    n <- length(x)
+    n1 <- length(x1)
+    n2 <- length(x2)
+    stopifnot(exprs = {
+        "arg. x inválido" = filled_num(x)
+        "arg. x1 inválido" = filled_num(x1)
+        "arg. x2 inválido" = filled_num(x2)
+        "arg. x incomp. x1,x2" = (n >= 1L & n1 == 1L & n2 == 1L) ||
+            (n > 1 & n == n1 & (n2 == 1L | n2 == n1)) ||
+            (n > 1 & n == n2 & n1 == 1L)
+    })
 
     tf <- x > x1 & x < x2
     if (inclusive) {
