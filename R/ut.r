@@ -525,9 +525,11 @@ dividir <- function(x = double(), y = double(), dec = NA) {
 #' Porcentaje
 #' @description Porcentaje c.r.a base
 #' @param x numeric
-#' @param base numeric: base del porcentaje; por omisión,
-#'     la suma de los datos ignorando los NA
+#' @param base numeric: base del porcentaje; por omisión, la suma de
+#'     los datos ignorando los NA
 #' @param dec integer: número de decimales; por omisión, cero
+#' @param x100 logical: resultado es dado multiplicado por 100 (TRUE)
+#'     o por 1 (FALSE). Por omisión, TRUE.
 #' @return numeric o NA
 #' @examples
 #' pct(2, 3)
@@ -539,19 +541,21 @@ dividir <- function(x = double(), y = double(), dec = NA) {
 #' }
 #' @export
 #' @author eddy castellón
-pct <- function(x = numeric(), base = numeric(), dec = 0L) {
+pct <- function(x = numeric(), base = numeric(), dec = 0L,
+                x100 = TRUE) {
     stopifnot("arg. inadmisible" = filled_num(x) &&
-        is.numeric(base))
+        is.numeric(base) && is.numeric(dec) && is.logical(x100))
 
     if (is_vacuo(base)) {
         base <- sum(x, na.rm = TRUE)
     }
 
+    factor <- ifelse(x100, 100L, 1L)
     if (all(base == 0 || is.na(base))) {
         pp <- vector("numeric", length(x)) + NA_real_
         warning("base es igual a cero o NA")
     } else {
-        pp <- round(100 * dividir(x, base, NA), dec)
+        pp <- round(factor * dividir(x, base, NA), dec)
     }
     pp
 }
@@ -709,6 +713,8 @@ ordenar_conforme <- function(x, y) {
 #' @param q numeric: número entre 0 y 1. Es opcional. Si \code{q = 0}
 #'     es lo mismo que método "adams"; q = 1 es "jefferson"; q = 0.5
 #'     es "webster"
+#' @param eps numeric: márgen de error (entre 0 y 1) del resultado;
+#'     por omisión, 0.001.
 #' @return integer
 #' @export
 #' @examples
@@ -717,7 +723,7 @@ ordenar_conforme <- function(x, y) {
 #' redondear(c(1.7, 1.5, 1.0, 2.6), 7, q = 0.3) # -> [1] 2 1 1 3
 #' redondear(c(1.7, 1.5, 1.0, 2.6), 7, q = 0.7) # -> [1] 2 2 1 2
 redondear <- function(x, suma = 100, metodo = "webs",
-                      q = double()){
+                      q = double(), eps = 1e-3){
 
     ## arithmetic-mean methods
     ##     Adams: q = 0
@@ -744,7 +750,7 @@ redondear <- function(x, suma = 100, metodo = "webs",
     
     zi <- integer(n)
     dt <- sum(ni) - suma
-    while (dt != 0) {
+    while (abs(dt) <= eps) {
         if (dt <= 0) {
             dd <- ni / wi
             sm <- min(dd)
@@ -772,7 +778,7 @@ redondear <- function(x, suma = 100, metodo = "webs",
 ## -- validación
 
 #' Positivo
-#' @description Es número positivo?
+#' @description Es mayor que cero
 #' @param x numeric
 #' @return logical
 #' @export
@@ -781,7 +787,7 @@ es_pos <- function(x) {
 }
 
 #' Si-entonces
-#' @description Si los datos de una variable son positivos, los
+#' @description Si los datos de una variable son mayor que cero, los
 #'     correspondientes de otra también lo son (condicional)
 #' @param x numeric: antecedente
 #' @param y numeric: consecuente
@@ -792,7 +798,7 @@ ypos_si_xpos <- function(x, y) {
 }
 
 #' equivalencia
-#' @description Si los datos de una variable son positivos, los
+#' @description Si los datos de una variable son mayor que cero, los
 #'     correspondientes de otra también los son, y viceversa
 #' @param x numeric
 #' @param y numeric
@@ -806,7 +812,7 @@ ypos_ssi_xpos <- function(x, y) {
 #' @description Deciles de una variable
 #' @param x numeric
 #' @param positivos logical: hace el cálculo sólo con los números
-#'     positivos de la variable. TRUE por omisión.
+#'     mayor que 0?. TRUE por omisión.
 #' @return numeric
 #' @export
 decil <- function(x, positivos = TRUE) {

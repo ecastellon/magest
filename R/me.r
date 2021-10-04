@@ -289,9 +289,9 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
         cc <- setdiff(names(dft), names(dfq))
         nn <- nrow(dfq)
         dfq  <- select(dft, one_of(c(cues, cc))) %>%
-            inner_join(dfq, ., by = cues)
+            left_join(dfq, ., by = cues)
 
-        if ((nn <- abs(nn - nrow(dfq))) != 0) {
+        if ((nn <- abs(nn - nrow(dfq))) != 0) {#left_join, irrelevante
             warning(paste("\n... antes y después de join con",
                           "d.f tierra, el d.f quest",
                           "difiere en", nn, "filas !!!"),
@@ -549,18 +549,22 @@ wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
 ## -- outliers --
 
 #' outlier-estimación
-#' @description Identifica las observaciones cuyo aporte al total es
-#'     «extremo» de acuerdo a la cota arg. "pct".
+#' @description Identifica las observaciones cuyo aporte al estimado
+#'     del total es mayor que un límite dado.
 #' @details Devuelve un data.frame con los datos «extremos» y el
 #'     número de observaciones involucradas en el cálculo del
-#'     total. Si no hay datos «extremos» devuelve NULL.
-#' @param x numeric: las observaciones
+#'     total. Si no hay datos «extremos» devuelve NULL. El cálculo se
+#'     hace por grupo (departamento, por ejemplo) si así es
+#'     indicado. En este caso, el estimado del total es el estimado a
+#'     nivel de grupo.
+#' @param x numeric: las observaciones ponderadas por el factor de
+#'     expansión.
 #' @param id numeric o character: «id» de las observaciones
 #' @param by numeric, character o factor: variable de agrupamiento
-#' @param cota numeric escalar: cota superior al porcentaje de la
+#' @param cota numeric escalar: límite superior del porcentaje de la
 #'     contribución; por omisión, 10
 #' @param orden logical: filas del resultado en orden decreciente por
-#'     aporte?; por omisión TRUE
+#'     aporte al total?; por omisión TRUE
 #' @return data.frame o NULL, invisible
 #' @examples
 #' aa <- data.frame(x = 1:5, y = c(100, 1, 2, 2, 1000),
@@ -615,7 +619,8 @@ out_pct <- function(x, id, by = integer(), cota = 10L,
 #'     cuestión, y en tal caso, los datos no son modificados.
 #' @param x numeric: los datos
 #' @param cota numeric escalar: cota
-#' @param fun function: función que devuelve sustituto de outlier
+#' @param fun function: función de los datos (x) que devuelve
+#'     sustituto de outlier
 #' @param mayor logical: cota es cota superior? TRUE por omisión.
 #' @param msj logical: un mensaje con indicadores?; FALSE por omisión
 #' @param ... argumentos pasados a fun
