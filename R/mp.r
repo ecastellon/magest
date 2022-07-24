@@ -540,276 +540,13 @@ db_save.RODBC <- function(x, df, tb = character(),
 #' @keywords internal
 db_drop.RODBC <- function(x, tb = character()) {
     stopifnot("arg. tb inadmisible" = is_scalar_name(tb))
-    
+
     ww <- tryCatch(RODBC::sqlDrop(x, df),
                    error = function(e) e)
     if (inherits(ww, "try-error")){
         message("\n!!!... ERROR")
     }
     invisible(ww)
-}
-
-#' save-excel
-#' @description Guarda data.frame en una tabla excel
-#' @details Un libro de excel funcionalmente es una base de datos en
-#'     el que las hojas o pestañas, y los rangos de celdas con nombre,
-#'     juegan el papel de tablas de la base de datos. El argumento
-#'     "tabla" debe hacer referencia a una hoja (los datos se guardan
-#'     a partir de la primera fila y columna) o a un rango con nombre
-#'     previamente definido en el libro excel.
-#'
-#'     El archivo debe existir y no debe estar abierto cuando se
-#'     ejecute la función. La función devuelve (invisible) TRUE o
-#'     FALSE según error durante el proceso.
-#' @param x data.frame
-#' @param tabla character: nombre de la tabla excel
-#' @param file character: nombre del archivo excel
-#' @param xv7 versión 7 de excel (xslx)? TRUE por defecto
-#' @return logical
-#' @seealso save_cel_xcl
-#' @examples
-#' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
-#' ww <- data.frame(x = 1:3, y = 3:1)
-#' ## NOT RUN
-#' \dontrun{save_xcl(ww, "mydata", fi)}
-#' @export
-#' @author eddy castellón
-save_xcl <- function(x, tabla = character(), file = character(),
-                     xv7 = TRUE) {
-    stopifnot("arg. x inadmisible" = inherits(x, "data.frame"),
-              "arg. tabla inadmisible" = is_scalar_name(tabla),
-              "arg. file inadmisible" = is_scalar(file) &&
-                  file.exists(file))
-
-    oo <- db_xcl(file, version7 = xv7, ronly = FALSE)
-    kk <- db_open(oo)
-    if (is_rodbc(kk)) {
-        db_save(kk, x, tabla)
-        db_close(kk)
-        invisible(TRUE)
-    } else {
-        message("error conexión\n")
-        invisible(FALSE)
-    }
-}
-
-#' read-excel
-#' @description Leer tabla o rango con nombre de excel
-#' @param x character: nombre del rango
-#' @param file character: nombre del archivo
-#' @param xv7 versión 7 de excel (xlsx)? TRUE por defecto
-#' @return data.frame o NULL
-#' @seealso save_xcl
-#' @export
-#' @examples
-#' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
-#' ww <- read_xcl("mydata", fi)
-#' @author eddy castellón
-read_xcl <- function(x, file, xv7 = TRUE) {
-    stopifnot("arg. x inadmisible" = filled_char(x) &&
-                  is_scalar(x) && nzchar(x),
-              "arg. file inadmisible" = is_scalar(file) &&
-                  file.exists(file))
-    oo <- db_xcl(file, version7 = xv7, ronly = FALSE)
-    kk <- db_open(oo)
-    if (is_rodbc(kk)) {
-        uu <- db_fetch(kk, x)
-        db_close(kk)
-    } else {
-        uu <- NULL
-    }
-    invisible(uu)
-}
-
-#' save-excel
-#' @description Almacena data.frame en las celdas indicadas de un
-#'     libro excel.
-#' @details Utiliza funciones de la librería «XLConnect» para guardar
-#'     los datos de un data.frame en un rango de celdas que inicia en
-#'     la fila y columna indicadas en los argumentos, o la referencia
-#'     a la celda en la notación que se acostumbra en excel; eg. "A$1"
-#'     o "J$20". Si no se utiliza la referencia se deben indicar la
-#'     fila y columna; pero si se indica la referencia, los argumentos
-#'     en de fila y columna son ignorados. De acuerdo a la
-#'     documentación, el número máximo permitido de fila es 1048576, y
-#'     16384 el de columna.
-#'
-#'     Si no existe el archivo excel, este es creado; si ya existe y
-#'     hay datos en el rango indicado, estos son remplazados. Así
-#'     mismo, si la hoja no existe, es creada; y si no se especifica,
-#'     asume que es la primera. Contrario a la función \code{save_xcl}
-#'     el rango no tiene que haber sido creado previamente.
-#'
-#'     La primera vez que se utiliza esta función, «XLConnect» crea
-#'     una "máquina virtual" para ejecutar una aplicación del lenguaje
-#'     Java, lo que demanda el "Java Runtime Environment" o "JRE"
-#'     (generalmente está instalado porque lo necesitan los "browser"
-#'     para ejecutar algunas aplicaciones, pero hay que verificar la
-#'     versión). El parámetro "free" (FALSE por defecto) es para pedir
-#'     que se libere la memoria utilizada por la máquina virtual. Lea
-#'     la documentación de «XLConnect» y los requerimientos del
-#'     sistema con \code{packageDescription("XLConnect")}.
-#' @param x data.frame
-#' @param file character: nombre del archivo
-#' @param rfc character: referencia a celda excel.
-#' @param col integer: número de la columna; igual a 1 por omisión
-#' @param fila integer: número de la fila; igual a 1 por omisión
-#' @param hoja nombre (character) o número (numeric) de la hoja o
-#'     pestaña que recibirá los datos
-#' @param free logical: liberar memoria (TRUE); TRUE por omisión
-#' @return logical
-#' @seealso save_xcl
-#' @examples
-#' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
-#' ww <- read_cel_xcl(fi, "D$8", "E$12")
-#' ## NOT RUN
-#' \dontrun{save_cel_xcl(ww, fi, "A$1")}
-#' @export
-save_cel_xcl <- function(x, file = character(),
-                         rfc = character(),
-                         col = 1L, fila = 1L,
-                         hoja = 1L, free = TRUE) {
-    stopifnot(exprs = {
-        inherits(x, "data.frame")
-        filled_char(file) && is_scalar(file)
-        ok_fname(file) #existe o puede crearse
-
-        (filled_num(hoja) || filled_char(hoja)) && is_scalar(hoja)
-
-        ifelse(is_vacuo(rfc), is.character(rfc),
-               is_scalar(rfc) && filled_char(rfc) &&
-               grepl("[A-Z]+\\$[0-9]+", rfc))
-
-        is_scalar(fila) && filled_num(fila) &&
-            as.integer(fila) >= 1 && fila < 1048576
-
-        is_scalar(col) && filled_num(col) &&
-            as.integer(col) >= 1 && col < 16384
-    })
-
-    ##referencia; C3 o C$3; ÔjÔ no es absoluta como $C$3 p.ej
-    if (filled_char(rfc)) {
-        mm <- XLConnect::cref2idx(rfc)
-        fila  <- mm[1, 1]
-        col  <- mm[1, 2]
-    } else {
-        fila <- as.integer(fila)
-        col <- as.integer(col)
-    }
-
-    fe <- file.exists(file)
-    wb <- try(XLConnect::loadWorkbook(file, create = !fe),
-              silent = TRUE)
-    stopifnot("!!! ERROR libro" = inherits(wb, "workbook"))
-
-    if (fe) {
-        sh <- XLConnect::getSheets(wb)
-    } else {
-        sh <- character()
-    }
-
-    ## hoja int. -> char.
-    if (is.numeric(hoja)) {
-        hoja <- as.integer(hoja)
-        if (hoja == 0L) hoja <- 1L
-        if (hoja <= length(sh)) {
-            hoja <- sh[hoja]
-        } else { #file no exist. u hoja > num.hojas
-            hoja <- tempfile("", "") %>%
-                substr(3, 7) %>%
-                paste0("H", hoja, .) #confianza 8 carac. no exista
-        }
-    }
-    if (!is.element(hoja, sh)) {
-        XLConnect::createSheet(wb, hoja)
-    }
-
-    ## capturar errores
-    tr <- try({XLConnect::writeWorksheet(wb, x, sheet = hoja,
-                                  startRow = fila, startCol = col,
-                                  header = TRUE)
-                                  XLConnect::saveWorkbook(wb)},
-              silent = TRUE)
-
-    if (free) {
-        XLConnect::xlcFreeMemory()
-    }
-
-    ko <- inherits(tr, "try-error")
-    if (ko) {
-        warning("\n... Error escribir o guardar archivo !!!")
-    }
-
-    !ko
-}
-
-#' Leer-excel
-#' @description Lee los datos que están en un rango de celdas de un
-#'     libro excel
-#' @details Ver explicación en la ayuda de la función
-#'     \code{save_cel_xcl}
-#' @param file character: nombre del archivo
-#' @param rf1 character: referencia de la celda superior izquierda del
-#'     rango; por omisión, "A$1"
-#' @param rf2 character: referencia de la celda inferior derecha del
-#'     rango
-#' @param hoja nombre (character) o número (numeric) de la hoja; por
-#'     omisión, 1
-#' @param free logical: TRUE para liberar memoria; FALSE por omisión
-#' @return data.frame o NULL
-#' @seealso save_cel_xcl
-#' @examples
-#' fi <- system.file("demofiles/mydata.xlsx", package = "XLConnect")
-#' ww <- read_cel_xcl(fi, "D$8", "E$12")
-#' @export
-read_cel_xcl <- function(file = character(),
-                         rf1 = "A$1", rf2 = character(),
-                         hoja = 1L, free = FALSE) {
-    stopifnot("arg. file inadmisible" = filled_char(file) &&
-                  is_scalar(file) && file.exists(file),
-
-              "arg. hoja inadmisible" = (filled_num(hoja) ||
-                  filled_char(hoja)) && is_scalar(hoja),
-
-              "arg. rf1 inadmisible" = filled_char(rf1) &&
-                  is_scalar(rf1) && nzchar(rf1) &&
-                  grepl("[A-Z]+\\$[0-9]+", rf1),
-
-              "arg. rf2 inadmisible" = filled_char(rf2) &&
-                  is_scalar(rf2) && nzchar(rf2) &&
-                  grepl("[A-Z]+\\$[0-9]+", rf2)
-              )
-
-    wb <- try(XLConnect::loadWorkbook(file), silent = TRUE)
-    stopifnot("error lectura" = inherits(wb, "workbook"))
-
-    if (is.numeric(hoja)) hoja <- as.integer(hoja)
-    sh <- XLConnect::getSheets(wb)
-    stopifnot("arg. hoja inadmisible" = ifelse(is.character(hoja),
-               is.element(hoja, sh),
-               hoja >= 1 && hoja <= length(sh))
-        )
- 
-    mm <- XLConnect::cref2idx(rf1)
-    r1  <- mm[1, 1]
-    c1  <- mm[1, 2]
-
-    mm <- XLConnect::cref2idx(rf2)
-    r2 <- mm[1, 1]
-    c2 <- mm[1, 2]
-
-    df <- try(XLConnect::readWorksheet(wb, hoja, r1, c1, r2, c2),
-              silent = TRUE)
-    if (!inherits(df, "data.frame")) {
-        df <- NULL
-        warning("\n... Error de lectura !!!")
-    }
-
-    if (free) {
-       XLConnect::xlcFreeMemory()
-    }
-
-    invisible(df)
 }
 
 #' Guardar-excel
@@ -840,7 +577,7 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
     ## opción para sobrescribir?
     if (file.exists(archivo)) {
         wb <- openxlsx::loadWorkbook(archivo)
-        sh <- openxlsx::sheets(wb) %>% tolower( )
+        sh <- openxlsx::sheets(wb) %>% tolower()
         if (nzchar(hoja)) {
             if ( is.element(tolower(hoja), sh) ) {
                 warning("!!! hoja excel «", hoja, "» ya EXISTE",
@@ -852,7 +589,7 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
         } else {
             nh <- length(sh) + 1L
             hoja <- paste0("Hoja", nh)
-            while(is.element(hoja, sh)) {
+            while (is.element(hoja, sh)) {
                 nh <- nh + 1L
                 hoja <- paste0("H", nh)
             }
@@ -866,7 +603,7 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
             hoja <- 1L
         }
     }
-    
+
     if (el_dia) {
         ss <- format(Sys.time( ), "%d.%b%Y:%I:%M%p")
         openxlsx::writeData(wb, hoja, ss, columna, fila)
@@ -877,6 +614,46 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
     openxlsx::saveWorkbook(wb, archivo,
                            overwrite = TRUE, returnValue = TRUE)
 }
+
+#' leer-excel-url
+#' @description Leer archivo excel residente en un servidor web
+#' @details read_excel de readxl lee archivos locales. La función
+#' descarga el archivo desde una dirección url para leerlo de forma
+#' local.
+#' @param url character: dirección url
+#' @param ... argumentos pasados a la función read_excel
+#' @return data.frame
+#' @export
+read_excel_url <- function(url, ...) {
+    ext <- basename(url) %>%
+        sub("(.+)(\\.[[:alpha:]]+$)", "\\2", .) %>% substring(2)
+    tf <- tempfile(fileext = paste0(".", ext))
+    ## xsl binario
+    md <- ifelse(ext == "xls", "wb", "w")
+    re <- try(curl::curl_download(url, tf, mode = md),
+              silent = TRUE)
+    if (inherits(re, "try-error")) {
+        warning("... ERROR: url no existe !!!")
+        df <- NULL
+    } else {
+        df <- readxl::read_excel(tf, ...)
+        unlink(tf)
+    }
+    return(df)
+}
+
+url <- "https://www.bcn.gob.ni/sites/default/files/estadisticas/siec/datos/4.V.02.01.03.01.xls"
+ext
+tf
+class(re )
+inherits(re, "try-error" )
+tf
+u <- read_excel(tf, 1, range = "A8:D15")
+head(u )
+md
+tf <- "C:\\Users\\eddy\\AppData\\Local\\Temp\\RtmpWgoXAe\\file2a7.xls"
+md
+tf <- "C:\\Users\\eddy\\Downloads\\4.V.02.01.03.01.xls"
 
 #' Guardar-excel
 #' @description Escribir data.frame en archivo excel

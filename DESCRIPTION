@@ -19,6 +19,9 @@ Suggests:
 Depends:
         magrittr,
         dplyr,
-        magfoo
+        magfoo,
+        openxlsx,
+        readxl,
+        curl
 Imports:
         RODBC
