@@ -616,66 +616,73 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
 }
 
 #' leer-excel-url
-#' @description Leer archivo excel residente en un servidor web
-#' @details read_excel de readxl lee archivos locales. La función
-#' descarga el archivo desde una dirección url para leerlo de forma
-#' local.
-#' @param url character: dirección url
+#' @description Leer archivo excel de acceso local o remoto
+#' @details read_excel de readxl lee archivos locales. Si la url es
+#'     una dirección remota (un servidor externo) la función lo
+#'     descarga en el archivo indicado en el parámetro arch y luego
+#'     carga los datos deseados. Si no se indica arch, hace la
+#'     descarga a un archivo temporal. El argumento al parámetro perm,
+#'     determina si el archivo local es borrado (FALSE, opción por
+#'     defecto) o no (TRUE). En los parámetros opcionales se pasan los
+#'     argumentos necesarios para que read_excel complete la
+#'     operación.
+#' @param url character: Dirección url
+#' @param arch character: opcional. Ruta del archivo de descarga
+#' @param perm logical: opcional. Conservar el archivo descargado?
+#'     (FALSE por omisión)
 #' @param ... argumentos pasados a la función read_excel
-#' @return data.frame
+#' @seealso readxl::read_excel
+#' @return data.frame o NULL
+#' @examples
+#' # NOT-RUN
+#' w <- read_excel_url("https://mag.gob.ni/eddy/arch.xlsx",
+#'                     sheet = "nov", range = "A1:B5")
+#' w <- read_excel_url("https://mag.gob.ni/eddy/arch.xlsx",
+#'                     arch = "c:/temp/xx.xls",
+#'                     sheet="nov", range="A1:B5")
+#' # lectura de archivo local
+#' w <- read_excel_url("c:/eddy/arch.xlsx",
+#'                     sheet="nov", range="A1:B5")
 #' @export
-read_excel_url <- function(url, ...) {
+read_excel_url <- function(url = character(), arch = character(),
+                           perm = FALSE, ...) {
+
+    stopifnot("url debe ser texto" = filled_char(url),
+              "perm T o F" = filled_log(perm))
+    
     ext <- basename(url) %>%
         sub("(.+)(\\.[[:alpha:]]+$)", "\\2", .) %>% substring(2)
-    tf <- tempfile(fileext = paste0(".", ext))
-    ## xsl binario
-    md <- ifelse(ext == "xls", "wb", "w")
-    re <- try(curl::curl_download(url, tf, mode = md),
-              silent = TRUE)
-    if (inherits(re, "try-error")) {
-        warning("... ERROR: url no existe !!!")
+
+    es_rem <- grepl("^https?://", dirname(url), ignore.case = TRUE)
+    
+    if (es_rem) {
+        if (!filled_char(arch)) {
+            arch <- tempfile(fileext = paste0(".", ext))
+            message("\n... nombre descarga: ", arch)
+             borra <- TRUE #unlink sólo si temporal
+        } else {
+            stopifnot("archivo ya existe" = !file.exists(arch),
+                      "no puedo crear archivo" = ok_fname(arch))
+        }
+
+        ## xsl binario
+        md <- ifelse(ext == "xls", "wb", "w")
+        arch <- tryCatch(curl::curl_download(url, arch, mode = md),
+                       error = function(e) {
+                           warning("... ERROR descargar de url !!!")
+                           NULL
+                       })
+    } else {
+        arch <- url
+    }
+    
+    if (is.null(arch)) {
         df <- NULL
     } else {
-        df <- readxl::read_excel(tf, ...)
-        unlink(tf)
+        df <- readxl::read_excel(arch, ...)
+        if (es_rem && !perm) unlink(arch)
     }
     return(df)
-}
-
-url <- "https://www.bcn.gob.ni/sites/default/files/estadisticas/siec/datos/4.V.02.01.03.01.xls"
-ext
-tf
-class(re )
-inherits(re, "try-error" )
-tf
-u <- read_excel(tf, 1, range = "A8:D15")
-head(u )
-md
-tf <- "C:\\Users\\eddy\\AppData\\Local\\Temp\\RtmpWgoXAe\\file2a7.xls"
-md
-tf <- "C:\\Users\\eddy\\Downloads\\4.V.02.01.03.01.xls"
-
-#' Guardar-excel
-#' @description Escribir data.frame en archivo excel
-#' @details Utiliza funciones de la librería «openxlsx» para guardar
-#'     un data.frame en archivo excel. No es permitido escribir sobre
-#'     celdas con datos.
-#' @param x data.frame
-#' @param archivo character: archivo excel
-#' @param hoja character: hoja del archivo donde se va escribir. Si no
-#'     existe, se agrega al libro excel. Si no se pasa un nombre, se
-#'     agrega una nueva de nombre "Hojaxx", donde "xx" son números.
-#' @param sobre_hoja logical: indicar que acepta escribir en una hoja
-#'     que ya existe. FALSE por omisión.
-#' @param columna integer: número de la columna de la celda superior
-#'     izquierda de la tabla donde se guardarán los datos
-#' @param fila integer: número de la fila
-#' @param el_dia logical: Escribir una celda con la fecha y hora
-#'     cuando se escribieron los datos?. TRUE por omisión
-#' @return nada
-#' @export
-leer_excel <- function( ) {
-    
 }
 
 ##--- expresiones SQL ---
@@ -1097,8 +1104,8 @@ par_conn_mysql <- function(...) {
 }
 
 #' Conectar MySQL
-#' @description Inicia la conexión con la base de datos csentry
-#' @details Si algunos de los argumentos no está en ..., se toma de
+#' @description Inicia la conexión con la base de datos MySQL
+#' @details Si alguno de los argumentos no está en ..., se toma de
 #'     "variables de ambiente"
 #' @seealso par_conn_mysql
 #' @param ... character. Argumentos a la función "dbConnect": host,
@@ -1125,11 +1132,197 @@ conn_mysql  <- function(...) {
     invisible(con)
 }
 
+#' Cierra conexión base de datos MySql
+#' @param x objeto: Conexión base datos MySql
 #' @export
 close_mysql <- function(x) {
     if (inherits(x, "MariaDBConnection")) {
         RMariaDB::dbDisconnect(x)
     }
+}
+
+#' Leer diccionario de datos Cspro
+#' @description Leer el diccionario de una base de datos de Cspro,
+#'     almacenado en una hoja de Excel
+#' @details El diccionario formado por 3 columnas nombradas: variable
+#'     (llenada con los nombres de las variables del cuestionario),
+#'     start (posición del primer caracter del dato correspondiente a
+#'     la variable) y length (número de caracteres que componen el
+#'     dato)
+#' @param xlsx character: nombre del archivo excel
+#' @param filas integer: número de filas que componen el diccionario
+#' @param columnas integer: número de las columnas que conforman el
+#'     diccionario
+#' @param hoja integer: número de la hoja que contiene el
+#'     diccionario. Por omisión, la primera hoja
+#' @return data.frame con los nombres de variables en minúscula.
+#' @examples
+#' \donttest{
+#'     leer_dic_dat_xlsx("datos/hato-dic.xlsx", 534, 2:4)
+#' }
+#' @export
+leer_dic_dat_xlsx <- function(xlsx, filas, columnas, hoja = 1L) {
+    if ( length(filas) == 1 ) filas <- seq_len(filas)
+
+    dic <- openxlsx::read.xlsx(xlsx, hoja,
+                               rows = filas,
+                               cols = columnas)
+    names(dic) <- tolower(names(dic))
+    dic["variable"] <- tolower(dic$variable)
+    dic
+}
+
+## ' ADVERTENCIA. Cuando el ingreso de los datos se corta antes del
+## ' último (por ejemplo cuando es no agrícola) la cadena de caracteres
+## ' llega hasta donde se ingresó el último dato. Para la lectura con
+## ' read.fwf esto es un inconveniente porque aquellas variables que
+## ' están después del último ingresado, se devuelven como character con
+## ' "'NA'" (no se "leen" porque el registro se queda corto. Puede ser
+## ' que el registro sólo tenga, digamos, 80 caracteres, y la variable
+## ' busca leerse a partir del caracter 81 o después). Por otra parte,
+## ' si se pasan argumentos al parámetro colClasses, se genera un error
+## ' y se detiene el proceso de lectura cuando trata de leer datos que
+## ' no existen.
+## '
+## ' Una opción es preprocesar el archivo y completar el registro con
+## ' caracteres "en blanco", según el número de caracteres especificados
+## ' en el diccionario de datos. La opción de leer y procesar después
+## ' para ajustar ("'NA'" convertidos a NA y modificar el tipo de la
+## ' variable que fue devuelta como character) demandaría más código por
+## ' los ajustes.
+## '
+## ' Con esa opción, habría que pasar TRUE al parámetro strip.white y ""
+## ' a na.strings, para que devuelva NA y no "NA"
+
+
+#' Cspro. Ajustar longitud de los registros
+#' @description Completar la longitud de los registros del campo
+#'     "questionnare".
+#' @details Parece que cuando el ingreso de los datos se corta antes
+#'     del último definido en el diccionaro de datos, la cadena de
+#'     caracteres que forma un registro del campo "questionnaire"
+#'     llega hasta donde se ingresó el último. Para la lectura con
+#'     read.fwf, de los datos exportados a un archivo tipo texto, esto
+#'     es problema porque aquellas variables que están después del
+#'     último ingresado, se devuelven como character con "'NA'" (no se
+#'     "leen" porque el registro se queda corto. Puede ser que el
+#'     registro sólo tenga, digamos, 80 caracteres, y la variable
+#'     busca leerse a partir del caracter 81 o después). Además, si se
+#'     pasan argumentos al parámetro colClasses de read.fwf, se genera
+#'     un error y se detiene el proceso de lectura cuando trata de
+#'     leer datos que no existen.
+#'
+#'     La función completa los registros con espacios al final,
+#'     conforme a las especificaciones en el diccionario.
+#' @param x character: vector con los registros leídos
+#' @param df_dic: data.frame con los datos del diccionario
+#' @return data.frame
+#' @export
+ajustar_lon_reg_cs <- function(x, df_dic) {
+    nc <- sum(df_dic$length)
+
+    nn <- vapply(x, nchar, 1L, USE.NAMES = FALSE)
+    nr <- (nc - nn) %>%
+        is_greater_than(0) %>%
+        which()
+
+    if ( length(nr) > 0 ) {
+        sp <- rep(" ", length.out = nc) %>%
+            paste0(collapse = "")
+
+        for ( k in nr ) {
+            x[k] <- paste0(x[k], substring(sp, nn[k] + 1L, nc))
+        }
+    }
+    invisible(x)
+}
+
+#' Exportar datos cspro
+#' @description Exporta los datos "limpios" a un archivo tipo texto.
+#' @details Lee los datos de la base en MySQL, ajusta la longitud de
+#'     los registros, elimina los registros marcados como borrados y
+#'     los que tienen datos duplicados en la variable "quest", bajo el
+#'     supuesto de que el último registro es el más reciente y es el
+#'     "correcto".
+#' @param tab character: nombre de la tabla en la base de datos MySQL
+#' @param dic data.frame: los campos del diccionario de datos
+#' @param artx character: nombre del archivo de salida. Por omisión,
+#'     un archivo temporal con extensión ".txt" y "cs" en primeros
+#'     caracteres.
+#' @return character: nombre del archivo
+#' @seealso ajustar_lon_reg_cs
+#' @export
+exportar_datos_cs <- function(tab, dic,
+                              artx = tempfile("cs",
+                                              fileext = ".txt")) {
+    stopifnot("archivo ya existe" = !file.exists(artx),
+              "no puedo crear archivo" = ok_fname(artx))
+    
+    cn <- conn_mysql()
+
+    del <- leer_campo_cspro(tab, "deleted", conn = cn) %>%
+        extract2(1) %>%
+        equals(1L)
+
+    txt <- leer_campo_cspro(tab, "questionnaire", conn = cn) %>%
+        filter(!del) %>%
+        extract2(1)
+
+    qst <- leer_campo_cspro(tab, "id_QUEST", conn = cn) %>%
+        filter(!del) %>%
+        extract2(1)
+
+    close_mysql(cn)
+
+    txt <- ajustar_lon_reg_cs(txt, dic)
+
+    nr <- seq.int(length(qst), 1L)
+    if ( anyDuplicated(qst) ) {
+        dr <- qst[nr] %>% duplicated()
+        txt <- txt[!dr[nr]]
+    }
+
+    nn <- length(del)
+    message("\n... número de registros leídos: ", nn)
+    message("\n... número de registros borrados: ", sum(del))
+    message("\n... número de registros duplicados: ", sum(dr))
+    message("\n... número de registros exportados: ", length(txt))
+
+    cat(txt, file = artx, sep = "\n")
+    artx
+}
+
+#' Leer tabla con campos adyacentes de longitud fija
+#' @description Leer datos de un archivo compuesto de líneas de texto
+#'     con campos de longitud fija.
+#' @details La función es una "wrap function" que utiliza la funcíón
+#'     read.fwf, adaptada para leer los datos exportados de Cspro. El
+#'     argumento al parámetro "dic" tiene las especificaciones del
+#'     diccionario de datos que determinan la posición y el número de
+#'     caracteres que ocupa cada variable en los registros.
+#' @param variables character: nombre de las variables en diccionario
+#'     de datos
+#' @param columnas character: nombre de las columnas en el data.frame
+#'     que será generado. Por omisión, igual a los nombres de las
+#'     variables.
+#' @param tipo_col character: tipo de los datos en las columnas.
+#' @param dic data.frame: los datos del diccionario de datos
+#' @param nomar character: nombre del archivo
+#' @seealso read.fwf, exportar_datos_cs
+#' @return data.frame
+#' @export
+leer_datos_fwf <- function(variables = character(),
+                           columnas = variables,
+                           tipo_col = character(),
+                           dic, nomar = character()) {
+
+    loncam <- longitud_variables(variables, dic)
+    w <- read.fwf(nomar, widths = loncam, col.names = columnas,
+              colClasses = tipo_col,
+              comment.char = "", strip.white = TRUE,
+              na.strings = "", stringsAsFactors = FALSE)
+    
+    invisible(w)
 }
 
 #' Campo-CSpro
@@ -1186,32 +1379,10 @@ leer_campo_cspro <- function(tab_dict = character(),
     invisible(w)
 }
 
-## ' ADVERTENCIA. Cuando el ingreso de los datos se corta antes del
-## ' último (por ejemplo cuando es no agrícola) la cadena de caracteres
-## ' llega hasta donde se ingresó el último dato. Para la lectura con
-## ' read.fwf esto es un inconveniente porque aquellas variables que
-## ' están después del último ingresado, se devuelven como character con
-## ' "'NA'" (no se "leen" porque el registro se queda corto. Puede ser
-## ' que el registro sólo tenga, digamos, 80 caracteres, y la variable
-## ' busca leerse a partir del caracter 81 o después). Por otra parte,
-## ' si se pasan argumentos al parámetro colClasses, se genera un error
-## ' y se detiene el proceso de lectura cuando trata de leer datos que
-## ' no existen.
-## '
-## ' Una opción es preprocesar el archivo y completar el registro con
-## ' caracteres "en blanco", según el número de caracteres especificados
-## ' en el diccionario de datos. La opción de leer y procesar después
-## ' para ajustar ("'NA'" convertidos a NA y modificar el tipo de la
-## ' variable que fue devuelta como character) demandaría más código por
-## ' los ajustes.
-## '
-## ' Con esa opción, habría que pasar TRUE al parámetro strip.white y ""
-## ' a na.strings, para que devuelva NA y no "NA"
-
 #' Leer-CSpro
 #' @description Leer los datos de las variables de una encuesta que ha
 #'     sido digitada con CSpro o CSentry
-#' @details En la base de datos de Cspro, cada encuesta está
+#' @details En la base de datos de Cspro cada encuesta está
 #'     almacenada en una sola tabla. El campo "questionnaire" trae los
 #'     datos de las variables en el cuestionario de la encuesta. Cada
 #'     elemento de ese campo corresponde a un cuestionario, y consiste
@@ -1305,54 +1476,7 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
     invisible(w)
 }
 
-#' Leer-CSpro
-#' @description Leer los datos de las variables de una encuesta que ha
-#'     sido digitada con CSpro o CSentry
-#' @details En la base de datos de Cspro, cada encuesta está
-#'     almacenada en una sola tabla. El campo "questionnaire" trae los
-#'     datos de las variables en el cuestionario de la encuesta. Cada
-#'     elemento de ese campo corresponde a un cuestionario, y consiste
-#'     de una sola ristra de caracteres dentro de la cual, los datos
-#'     de una variable ocupan una posición y un número de caracteres
-#'     determinado, ambos definidos en el "diccionario de datos". Para
-#'     cargar los datos en un data.frame, la función manda escribir
-#'     cada elemento de "questionnaire" como una línea de un archivo
-#'     temporal, y después lee la secuencia de caracteres asociada a
-#'     los datos de cada variable, con la función read.fwf. Tener
-#'     presente que cspro utiliza un campo al inicio (de longitud 1)
-#'     para indicar el tipo de registro. Ver ayuda de read.fwf acerca
-#'     del uso de longitudes negativas para "saltar" variables
-#' @param tab_dict character: nombre de la tabla en la base de datos
-#' @param dat_dict data.frame: diccionario de datos con las columnas
-#'     variable y length (caracteres ocupados por la variable)
-#' @param columnas character: nombre que se le asignarán a las
-#'     variables en el resultado
-#' @param clase_col character: tipo de vector de la variable
-#'     (character, integer, real, ...). Opcional.
-#' @param ... character: Argumentos para establecer la conexión (host,
-#'     dbname, userid, password) o la conexión si ya fue establecida
-#'     (conn)
-#' @seealso conn_mysql, par_conn_mysql
-#' @return data.frame o NULL
-#' @keywords internal
-#' @examples
-#' \donttest{
-#' x <- get_data_cspro("caracterizacion_dict", dicc,
-#'                     columnas = c("reg", "quest", "tecnico",
-#'                                  "copiade", "cx", "cy",
-#'                                  "informante"),
-#'                     conn = conn_mysql())
-#' x <- get_data_cspro("caracterizacion_dict",
-#'                     dat_dict = dicc,
-#'                     columnas = c("quest", "tecnico", "copiade",
-#'                                  "cx", "cy", "informante"),
-#'                     host = Sys.getenv("host"), user = "eddy",
-#'                     dbname = "bd", password = Sys.getenv("pwd"))}
-get_dat_cspro <- function(...) {
-    message("Usar get_data_cspro !!!" )
-}
-
-#' Vector lectura Cspro
+#' Cuantos caracteres ocupan las variables en registros Cspro
 #' @description Construye el vector que se pasa como argumento del
 #'     parámetro "loncam" de la función get_data_cspro
 #' @details Los elementos del vector indican el número de caracteres

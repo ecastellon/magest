@@ -22,6 +22,7 @@ Depends:
         magfoo,
         openxlsx,
         readxl,
-        curl
+        curl,
+        purrr
 Imports:
         RODBC
