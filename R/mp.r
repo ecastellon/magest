@@ -1386,7 +1386,7 @@ leer_campo_cspro <- function(tab_dict = character(),
 #'     almacenada en una sola tabla. El campo "questionnaire" trae los
 #'     datos de las variables en el cuestionario de la encuesta. Cada
 #'     elemento de ese campo corresponde a un cuestionario, y consiste
-#'     de una sola ristra de caracteres dentro de la cual, los datos
+#'     de una sola ristra de caracteres dentro de la cual los datos
 #'     de una variable ocupan una posición y un número de caracteres
 #'     determinado, ambos definidos en el "diccionario de datos". Para
 #'     cargar los datos en un data.frame, la función manda escribir
@@ -1464,7 +1464,7 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
         clase_col <- NA
     }
 
-    #' alternativa es utilizar substring para extraer las variables
+    # alternativa es utilizar substring para extraer las variables
     tf <- tempfile()
     cat(w, file = tf, sep = "\n")
     w <- read.fwf(tf, widths = loncam, col.names = columnas,
