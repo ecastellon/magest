@@ -40,7 +40,7 @@ En la base de datos de Cspro cada encuesta está
 almacenada en una sola tabla. El campo "questionnaire" trae los
 datos de las variables en el cuestionario de la encuesta. Cada
 elemento de ese campo corresponde a un cuestionario, y consiste
-de una sola ristra de caracteres dentro de la cual, los datos
+de una sola ristra de caracteres dentro de la cual los datos
 de una variable ocupan una posición y un número de caracteres
 determinado, ambos definidos en el "diccionario de datos". Para
 cargar los datos en un data.frame, la función manda escribir
@@ -65,7 +65,6 @@ x <- get_data_cspro("caracterizacion_dict",
                                  "cx", "cy", "informante"),
                     host = Sys.getenv("host"), user = "eddy",
                     dbname = "bd", password = Sys.getenv("pwd"))}
-alternativa es utilizar substring para extraer las variables
 }
 \seealso{
 conn_mysql, par_conn_mysql

@@ -1184,7 +1184,6 @@ ajustar_lon_reg_cs <- function(x, df_dic) {
 #'     correspondientes longitudes
 #' @return integer
 #' @export
-#' @importFrom prepend purrr
 #' @examples
 #' dd <- data.frame(variable = c("boleta", "nombre", "direccion"),
 #'                  length = c(5, 50, 100))
@@ -1230,7 +1229,7 @@ longitud_variables <- function(x = character(), dic) {
     ## variables que "saltar" al inicio
     if (k[1] > 1) {
         cum <- cumsum(dic$length[seq_len(k[1] - 1)])
-        y <- prepend(y, -cum)
+        y <- purrr::prepend(y, -cum)
     }
 
     y
