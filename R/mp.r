@@ -615,76 +615,6 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
                            overwrite = TRUE, returnValue = TRUE)
 }
 
-#' leer-excel-url
-#' @description Leer archivo excel de acceso local o remoto
-#' @details read_excel de readxl lee archivos locales. Si la url es
-#'     una dirección remota (un servidor externo) la función lo
-#'     descarga en el archivo indicado en el parámetro arch y luego
-#'     carga los datos deseados. Si no se indica arch, hace la
-#'     descarga a un archivo temporal. El argumento al parámetro perm,
-#'     determina si el archivo local es borrado (FALSE, opción por
-#'     defecto) o no (TRUE). En los parámetros opcionales se pasan los
-#'     argumentos necesarios para que read_excel complete la
-#'     operación.
-#' @param url character: Dirección url
-#' @param arch character: opcional. Ruta del archivo de descarga
-#' @param perm logical: opcional. Conservar el archivo descargado?
-#'     (FALSE por omisión)
-#' @param ... argumentos pasados a la función read_excel
-#' @seealso readxl::read_excel
-#' @return data.frame o NULL
-#' @examples
-#' # NOT-RUN
-#' w <- read_excel_url("https://mag.gob.ni/eddy/arch.xlsx",
-#'                     sheet = "nov", range = "A1:B5")
-#' w <- read_excel_url("https://mag.gob.ni/eddy/arch.xlsx",
-#'                     arch = "c:/temp/xx.xls",
-#'                     sheet="nov", range="A1:B5")
-#' # lectura de archivo local
-#' w <- read_excel_url("c:/eddy/arch.xlsx",
-#'                     sheet="nov", range="A1:B5")
-#' @export
-read_excel_url <- function(url = character(), arch = character(),
-                           perm = FALSE, ...) {
-
-    stopifnot("url debe ser texto" = filled_char(url),
-              "perm T o F" = filled_log(perm))
-    
-    ext <- basename(url) %>%
-        sub("(.+)(\\.[[:alpha:]]+$)", "\\2", .) %>% substring(2)
-
-    es_rem <- grepl("^https?://", dirname(url), ignore.case = TRUE)
-    
-    if (es_rem) {
-        if (!filled_char(arch)) {
-            arch <- tempfile(fileext = paste0(".", ext))
-            message("\n... nombre descarga: ", arch)
-             borra <- TRUE #unlink sólo si temporal
-        } else {
-            stopifnot("archivo ya existe" = !file.exists(arch),
-                      "no puedo crear archivo" = ok_fname(arch))
-        }
-
-        ## xsl binario
-        md <- ifelse(ext == "xls", "wb", "w")
-        arch <- tryCatch(curl::curl_download(url, arch, mode = md),
-                       error = function(e) {
-                           warning("... ERROR descargar de url !!!")
-                           NULL
-                       })
-    } else {
-        arch <- url
-    }
-    
-    if (is.null(arch)) {
-        df <- NULL
-    } else {
-        df <- readxl::read_excel(arch, ...)
-        if (es_rem && !perm) unlink(arch)
-    }
-    return(df)
-}
-
 ##--- expresiones SQL ---
 
 #' SQL-expresión
@@ -977,7 +907,7 @@ xsql_t <- function(x = character(), cam = character(),
     cn <- c(idr, nvb)
     mk <- matrix(cam, ncol = length(nvb), byrow = xfi) %>%
         cbind(idr, .) %>%
-        set_names(cn) %>%
+        magrittr::set_names(cn) %>%
         apply(1, function(z) xsql_s(x, cm = setNames(z, cn)))
 
 
@@ -1493,6 +1423,7 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
 #'     correspondientes longitudes
 #' @return integer
 #' @export
+#' @importFrom prepend purrr
 #' @examples
 #' dd <- data.frame(variable = c("boleta", "nombre", "direccion"),
 #'                  length = c(5, 50, 100))
@@ -1538,7 +1469,7 @@ longitud_variables <- function(x = character(), dic) {
     ## variables que "saltar" al inicio
     if (k[1] > 1) {
         cum <- cumsum(dic$length[seq_len(k[1] - 1)])
-        y <- purrr::prepend(y, -cum)
+        y <- prepend(y, -cum)
     }
 
     y
