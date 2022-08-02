@@ -1167,6 +1167,75 @@ ajustar_lon_reg_cs <- function(x, df_dic) {
     invisible(x)
 }
 
+#' Cuantos caracteres ocupan las variables en registros Cspro
+#' @description Construye el vector que se pasa como argumento del
+#'     parámetro "loncam" de la función get_data_cspro
+#' @details Los elementos del vector indican el número de caracteres
+#'     que ocupa una variable dentro de la cadena de caracteres de un
+#'     registro, o bien el número de caracteres (número negativo) que
+#'     hay entre dos variables que no están contigüas en el registro.
+#'
+#'     El parámetro "dic" es un data.frame con las columnas "variable"
+#'     y "length" tomadas del diccionario de datos de la tabla de
+#'     Cspro.
+#' @seealso get_data_cspro, read.fwf
+#' @param x character: nombres de las variables
+#' @param dic data.frame con los nombres de las variables y las
+#'     correspondientes longitudes
+#' @return integer
+#' @export
+#' @importFrom prepend purrr
+#' @examples
+#' dd <- data.frame(variable = c("boleta", "nombre", "direccion"),
+#'                  length = c(5, 50, 100))
+#' longitud_variables(c("boleta", "direccion"), dd) #-> c(5, -50, 100)
+longitud_variables <- function(x = character(), dic) {
+    stopifnot("arg. x inadmisible" = is.character(x) && length(x))
+
+    x <- ordenar_conforme(x, dic$variable)
+    
+    m <- match(x, dic$variable) %>% Filter(Negate(is.na), .)
+    if (length(m) < length(x)) {
+        warning("\n... hay variables que no están en diccionario !!!")
+    }
+    k <- seq.int(min(m), max(m))
+
+    z <- dic$variable[k]
+    y <- dic$length[k]
+
+    ## variables enmedio excluidas ("saltar")
+    ## elementos correspondientes a negativo
+    i <- z %in% x
+    y[!i] <- -y[!i]
+
+    ## acumula rachas de negativos
+    ## y pone a 0 todos menos el acumulado
+    n <- length(y)
+    cum <- 0L
+    while(n > 0) {
+        if (y[n] > 0) {
+            cum <- 0L
+        } else {
+            if (cum < 0) {
+                y[n + 1] <- 0L
+            }
+            cum <- cum + y[n]
+            y[n] <- cum
+        }
+        n <- n - 1
+    }
+
+    y <- y[y != 0L]
+
+    ## variables que "saltar" al inicio
+    if (k[1] > 1) {
+        cum <- cumsum(dic$length[seq_len(k[1] - 1)])
+        y <- prepend(y, -cum)
+    }
+
+    y
+}
+
 #' Exportar datos cspro
 #' @description Exporta los datos "limpios" a un archivo tipo texto.
 #' @details Lee los datos de la base en MySQL, ajusta la longitud de
@@ -1253,6 +1322,38 @@ leer_datos_fwf <- function(variables = character(),
               na.strings = "", stringsAsFactors = FALSE)
     
     invisible(w)
+}
+
+#' Leer y unir cuadros de datos
+#' @description Leer datos de varias variables y unirlos en un mismo
+#'     conjunto
+#' @details Lee los datos de varias variables relacionadas con un
+#'     mismo grupo de atributos, y los une con un rbind
+#' @param variables character: los nombres de las variables en el archivo
+#' @param columnas character: nombres de las variables en el data.frame
+#'     resultante
+#' @param tipo_col character: tipos de los datos en el archivo
+#' @param dic data.frame: data.frame con los datos del diccionario de
+#'     datos
+#' @param nomar character: nombre del archivo donde están todos los
+#'     datos
+#' @return data.frame
+#' @export
+leer_cuadros_fwf <- function(variables, columnas, tipo_col,
+                             dic, nomar) {
+    nv <- length(variables)
+    nc <- length(columnas)
+    cg <- 2:nv
+    ng <- (nv - 1) %/% nc
+
+    x <- tryCatch(leer_datos_fwf(variables, columas, tipo_col,
+                                 dic, nomarch),
+                  error = function(e) print(variables))
+
+    names(x)[cg] <- rep(columnaas, length.out = nv - 1)
+
+    split(cg, rep(seq_len(ng), each = nc)) %>%
+        map_dfr(function(r) x[, r])
 }
 
 #' Campo-CSpro
@@ -1406,71 +1507,5 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
     invisible(w)
 }
 
-#' Cuantos caracteres ocupan las variables en registros Cspro
-#' @description Construye el vector que se pasa como argumento del
-#'     parámetro "loncam" de la función get_data_cspro
-#' @details Los elementos del vector indican el número de caracteres
-#'     que ocupa una variable dentro de la cadena de caracteres de un
-#'     registro, o bien el número de caracteres (número negativo) que
-#'     hay entre dos variables que no están contigüas en el registro.
-#'
-#'     El parámetro "dic" es un data.frame con las columnas "variable"
-#'     y "length" tomadas del diccionario de datos de la tabla de
-#'     Cspro.
-#' @seealso get_data_cspro, read.fwf
-#' @param x character: nombres de las variables
-#' @param dic data.frame con los nombres de las variables y las
-#'     correspondientes longitudes
-#' @return integer
-#' @export
-#' @importFrom prepend purrr
-#' @examples
-#' dd <- data.frame(variable = c("boleta", "nombre", "direccion"),
-#'                  length = c(5, 50, 100))
-#' longitud_variables(c("boleta", "direccion"), dd) #-> c(5, -50, 100)
-longitud_variables <- function(x = character(), dic) {
-    stopifnot("arg. x inadmisible" = is.character(x) && length(x))
 
-    x <- ordenar_conforme(x, dic$variable)
-    
-    m <- match(x, dic$variable) %>% Filter(Negate(is.na), .)
-    if (length(m) < length(x)) {
-        warning("\n... hay variables que no están en diccionario !!!")
-    }
-    k <- seq.int(min(m), max(m))
 
-    z <- dic$variable[k]
-    y <- dic$length[k]
-
-    ## variables enmedio excluidas ("saltar")
-    ## elementos correspondientes a negativo
-    i <- z %in% x
-    y[!i] <- -y[!i]
-
-    ## acumula rachas de negativos
-    ## y pone a 0 todos menos el acumulado
-    n <- length(y)
-    cum <- 0L
-    while(n > 0) {
-        if (y[n] > 0) {
-            cum <- 0L
-        } else {
-            if (cum < 0) {
-                y[n + 1] <- 0L
-            }
-            cum <- cum + y[n]
-            y[n] <- cum
-        }
-        n <- n - 1
-    }
-
-    y <- y[y != 0L]
-
-    ## variables que "saltar" al inicio
-    if (k[1] > 1) {
-        cum <- cumsum(dic$length[seq_len(k[1] - 1)])
-        y <- prepend(y, -cum)
-    }
-
-    y
-}
