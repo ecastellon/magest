@@ -1324,13 +1324,21 @@ leer_datos_fwf <- function(variables = character(),
 }
 
 #' Leer y unir cuadros de datos
-#' @description Leer datos de varias variables y unirlos en un mismo
-#'     conjunto
-#' @details Lee los datos de varias variables relacionadas con un
-#'     mismo grupo de atributos, y los une con un rbind
-#' @param variables character: los nombres de las variables en el archivo
-#' @param columnas character: nombres de las variables en el data.frame
-#'     resultante
+#' @description Lee los datos de varias variables y hace un «reshape»
+#'     para organizarlos en un grupo de atributos comunes
+#' @details Lee los datos en un archivo tipo «fwf», de varias
+#'     variables relacionadas con un mismo grupo de atributos; separa
+#'     las variables conforme a los atributos en común, y las une con
+#'     un rbind. Una variable debe identificar los registros
+#'     (generalmente el número del cuestionario), y las demás deben
+#'     ser, en número, un múltiplo del número de columnas (atributos
+#'     en común) del data.frame resultante. En el ejemplo, las
+#'     variables «c001» y «c003» refieren al atributo «cultivo», y las
+#'     otras dos al atributo «precio».
+#' @param variables character: los nombres de las variables que se van
+#'     a leer del archivo
+#' @param columnas character: nombres de los atributos en común que
+#'     serán las columnas del data.frame resultante
 #' @param tipo_col character: tipos de los datos en el archivo
 #' @param dic data.frame: data.frame con los datos del diccionario de
 #'     datos
@@ -1338,18 +1346,27 @@ leer_datos_fwf <- function(variables = character(),
 #'     datos
 #' @return data.frame
 #' @export
+#' @examples
+#' \dontrun{
+#' leer_cuadros_fwf(c("quest", "c001", "c002", "c003", "c004"),
+#'                  columnas = c("cultivo", "precio"),
+#'                  tipo_col = c("integer",
+#'                               rep(c("integer", "double"), 2)),
+#'                  dic = dicc, nomar = "arch.txt")}
 leer_cuadros_fwf <- function(variables, columnas, tipo_col,
                              dic, nomar) {
     nv <- length(variables)
     nc <- length(columnas)
     cg <- 2:nv
     ng <- (nv - 1) %/% nc
+    ok <- (nc * ng) == (nv - 1)
 
+    stopifnot("variables no múltiplo de columnas" = ok)
     x <- tryCatch(leer_datos_fwf(variables, columas, tipo_col,
                                  dic, nomarch),
                   error = function(e) print(variables))
 
-    names(x)[cg] <- rep(columnaas, length.out = nv - 1)
+    names(x)[cg] <- rep(columnas, length.out = nv - 1)
 
     split(cg, rep(seq_len(ng), each = nc)) %>%
         map_dfr(function(r) x[, r])
@@ -1505,6 +1522,3 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
 
     invisible(w)
 }
-
-
-

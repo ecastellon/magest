@@ -7,10 +7,11 @@
 leer_cuadros_fwf(variables, columnas, tipo_col, dic, nomar)
 }
 \arguments{
-\item{variables}{character: los nombres de las variables en el archivo}
+\item{variables}{character: los nombres de las variables que se van
+a leer del archivo}
 
-\item{columnas}{character: nombres de las variables en el data.frame
-resultante}
+\item{columnas}{character: nombres de los atributos en común que
+serán las columnas del data.frame resultante}
 
 \item{tipo_col}{character: tipos de los datos en el archivo}
 
@@ -24,10 +25,25 @@ datos}
 data.frame
 }
 \description{
-Leer datos de varias variables y unirlos en un mismo
-conjunto
+Lee los datos de varias variables y hace un «reshape»
+para organizarlos en un grupo de atributos comunes
 }
 \details{
-Lee los datos de varias variables relacionadas con un
-mismo grupo de atributos, y los une con un rbind
+Lee los datos en un archivo tipo «fwf», de varias
+variables relacionadas con un mismo grupo de atributos; separa
+las variables conforme a los atributos en común, y las une con
+un rbind. Una variable debe identificar los registros
+(generalmente el número del cuestionario), y las demás deben
+ser, en número, un múltiplo del número de columnas (atributos
+en común) del data.frame resultante. En el ejemplo, las
+variables «c001» y «c003» refieren al atributo «cultivo», y las
+otras dos al atributo «precio».
+}
+\examples{
+\dontrun{
+leer_cuadros_fwf(c("quest", "c001", "c002", "c003", "c004"),
+                 columnas = c("cultivo", "precio"),
+                 tipo_col = c("integer",
+                              rep(c("integer", "double"), 2)),
+                 dic = dicc, nomar = "arch.txt")}
 }
