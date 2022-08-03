@@ -31,8 +31,8 @@ para organizarlos en un grupo de atributos comunes
 \details{
 Lee los datos en un archivo tipo «fwf», de varias
 variables relacionadas con un mismo grupo de atributos; separa
-las variables conforme a los atributos en común, y las une con
-un rbind. Una variable debe identificar los registros
+las variables conforme a los atributos en común y las une con
+un rbind. La primera variable debe identificar los registros
 (generalmente el número del cuestionario), y las demás deben
 ser, en número, un múltiplo del número de columnas (atributos
 en común) del data.frame resultante. En el ejemplo, las

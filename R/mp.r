@@ -1328,8 +1328,8 @@ leer_datos_fwf <- function(variables = character(),
 #'     para organizarlos en un grupo de atributos comunes
 #' @details Lee los datos en un archivo tipo «fwf», de varias
 #'     variables relacionadas con un mismo grupo de atributos; separa
-#'     las variables conforme a los atributos en común, y las une con
-#'     un rbind. Una variable debe identificar los registros
+#'     las variables conforme a los atributos en común y las une con
+#'     un rbind. La primera variable debe identificar los registros
 #'     (generalmente el número del cuestionario), y las demás deben
 #'     ser, en número, un múltiplo del número de columnas (atributos
 #'     en común) del data.frame resultante. En el ejemplo, las
@@ -1362,14 +1362,14 @@ leer_cuadros_fwf <- function(variables, columnas, tipo_col,
     ok <- (nc * ng) == (nv - 1)
 
     stopifnot("variables no múltiplo de columnas" = ok)
-    x <- tryCatch(leer_datos_fwf(variables, columas, tipo_col,
-                                 dic, nomarch),
+    x <- tryCatch(leer_datos_fwf(variables, variables, tipo_col,
+                                 dic, nomar),
                   error = function(e) print(variables))
 
     names(x)[cg] <- rep(columnas, length.out = nv - 1)
 
     split(cg, rep(seq_len(ng), each = nc)) %>%
-        map_dfr(function(r) x[, r])
+        map_dfr(function(r) x[, c(1, r)])
 }
 
 #' Campo-CSpro
