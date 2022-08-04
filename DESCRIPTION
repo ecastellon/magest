@@ -21,8 +21,6 @@ Depends:
         dplyr,
         magfoo,
         openxlsx,
-        readxl,
-        curl,
         purrr
 Imports:
         RODBC

@@ -615,76 +615,6 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
                            overwrite = TRUE, returnValue = TRUE)
 }
 
-#' leer-excel-url
-#' @description Leer archivo excel de acceso local o remoto
-#' @details read_excel de readxl lee archivos locales. Si la url es
-#'     una dirección remota (un servidor externo) la función lo
-#'     descarga en el archivo indicado en el parámetro arch y luego
-#'     carga los datos deseados. Si no se indica arch, hace la
-#'     descarga a un archivo temporal. El argumento al parámetro perm,
-#'     determina si el archivo local es borrado (FALSE, opción por
-#'     defecto) o no (TRUE). En los parámetros opcionales se pasan los
-#'     argumentos necesarios para que read_excel complete la
-#'     operación.
-#' @param url character: Dirección url
-#' @param arch character: opcional. Ruta del archivo de descarga
-#' @param perm logical: opcional. Conservar el archivo descargado?
-#'     (FALSE por omisión)
-#' @param ... argumentos pasados a la función read_excel
-#' @seealso readxl::read_excel
-#' @return data.frame o NULL
-#' @examples
-#' # NOT-RUN
-#' w <- read_excel_url("https://mag.gob.ni/eddy/arch.xlsx",
-#'                     sheet = "nov", range = "A1:B5")
-#' w <- read_excel_url("https://mag.gob.ni/eddy/arch.xlsx",
-#'                     arch = "c:/temp/xx.xls",
-#'                     sheet="nov", range="A1:B5")
-#' # lectura de archivo local
-#' w <- read_excel_url("c:/eddy/arch.xlsx",
-#'                     sheet="nov", range="A1:B5")
-#' @export
-read_excel_url <- function(url = character(), arch = character(),
-                           perm = FALSE, ...) {
-
-    stopifnot("url debe ser texto" = filled_char(url),
-              "perm T o F" = filled_log(perm))
-    
-    ext <- basename(url) %>%
-        sub("(.+)(\\.[[:alpha:]]+$)", "\\2", .) %>% substring(2)
-
-    es_rem <- grepl("^https?://", dirname(url), ignore.case = TRUE)
-    
-    if (es_rem) {
-        if (!filled_char(arch)) {
-            arch <- tempfile(fileext = paste0(".", ext))
-            message("\n... nombre descarga: ", arch)
-             borra <- TRUE #unlink sólo si temporal
-        } else {
-            stopifnot("archivo ya existe" = !file.exists(arch),
-                      "no puedo crear archivo" = ok_fname(arch))
-        }
-
-        ## xsl binario
-        md <- ifelse(ext == "xls", "wb", "w")
-        arch <- tryCatch(curl::curl_download(url, arch, mode = md),
-                       error = function(e) {
-                           warning("... ERROR descargar de url !!!")
-                           NULL
-                       })
-    } else {
-        arch <- url
-    }
-    
-    if (is.null(arch)) {
-        df <- NULL
-    } else {
-        df <- readxl::read_excel(arch, ...)
-        if (es_rem && !perm) unlink(arch)
-    }
-    return(df)
-}
-
 ##--- expresiones SQL ---
 
 #' SQL-expresión
@@ -977,7 +907,7 @@ xsql_t <- function(x = character(), cam = character(),
     cn <- c(idr, nvb)
     mk <- matrix(cam, ncol = length(nvb), byrow = xfi) %>%
         cbind(idr, .) %>%
-        set_names(cn) %>%
+        magrittr::set_names(cn) %>%
         apply(1, function(z) xsql_s(x, cm = setNames(z, cn)))
 
 
@@ -1237,6 +1167,74 @@ ajustar_lon_reg_cs <- function(x, df_dic) {
     invisible(x)
 }
 
+#' Cuantos caracteres ocupan las variables en registros Cspro
+#' @description Construye el vector que se pasa como argumento del
+#'     parámetro "loncam" de la función get_data_cspro
+#' @details Los elementos del vector indican el número de caracteres
+#'     que ocupa una variable dentro de la cadena de caracteres de un
+#'     registro, o bien el número de caracteres (número negativo) que
+#'     hay entre dos variables que no están contigüas en el registro.
+#'
+#'     El parámetro "dic" es un data.frame con las columnas "variable"
+#'     y "length" tomadas del diccionario de datos de la tabla de
+#'     Cspro.
+#' @seealso get_data_cspro, read.fwf
+#' @param x character: nombres de las variables
+#' @param dic data.frame con los nombres de las variables y las
+#'     correspondientes longitudes
+#' @return integer
+#' @export
+#' @examples
+#' dd <- data.frame(variable = c("boleta", "nombre", "direccion"),
+#'                  length = c(5, 50, 100))
+#' longitud_variables(c("boleta", "direccion"), dd) #-> c(5, -50, 100)
+longitud_variables <- function(x = character(), dic) {
+    stopifnot("arg. x inadmisible" = is.character(x) && length(x))
+
+    x <- ordenar_conforme(x, dic$variable)
+    
+    m <- match(x, dic$variable) %>% Filter(Negate(is.na), .)
+    if (length(m) < length(x)) {
+        warning("\n... hay variables que no están en diccionario !!!")
+    }
+    k <- seq.int(min(m), max(m))
+
+    z <- dic$variable[k]
+    y <- dic$length[k]
+
+    ## variables enmedio excluidas ("saltar")
+    ## elementos correspondientes a negativo
+    i <- z %in% x
+    y[!i] <- -y[!i]
+
+    ## acumula rachas de negativos
+    ## y pone a 0 todos menos el acumulado
+    n <- length(y)
+    cum <- 0L
+    while(n > 0) {
+        if (y[n] > 0) {
+            cum <- 0L
+        } else {
+            if (cum < 0) {
+                y[n + 1] <- 0L
+            }
+            cum <- cum + y[n]
+            y[n] <- cum
+        }
+        n <- n - 1
+    }
+
+    y <- y[y != 0L]
+
+    ## variables que "saltar" al inicio
+    if (k[1] > 1) {
+        cum <- cumsum(dic$length[seq_len(k[1] - 1)])
+        y <- purrr::prepend(y, -cum)
+    }
+
+    y
+}
+
 #' Exportar datos cspro
 #' @description Exporta los datos "limpios" a un archivo tipo texto.
 #' @details Lee los datos de la base en MySQL, ajusta la longitud de
@@ -1325,6 +1323,55 @@ leer_datos_fwf <- function(variables = character(),
     invisible(w)
 }
 
+#' Leer y unir cuadros de datos
+#' @description Lee los datos de varias variables y hace un «reshape»
+#'     para organizarlos en un grupo de atributos comunes
+#' @details Lee los datos en un archivo tipo «fwf», de varias
+#'     variables relacionadas con un mismo grupo de atributos; separa
+#'     las variables conforme a los atributos en común y las une con
+#'     un rbind. La primera variable debe identificar los registros
+#'     (generalmente el número del cuestionario), y las demás deben
+#'     ser, en número, un múltiplo del número de columnas (atributos
+#'     en común) del data.frame resultante. En el ejemplo, las
+#'     variables «c001» y «c003» refieren al atributo «cultivo», y las
+#'     otras dos al atributo «precio».
+#' @param variables character: los nombres de las variables que se van
+#'     a leer del archivo
+#' @param columnas character: nombres de los atributos en común que
+#'     serán las columnas del data.frame resultante
+#' @param tipo_col character: tipos de los datos en el archivo
+#' @param dic data.frame: data.frame con los datos del diccionario de
+#'     datos
+#' @param nomar character: nombre del archivo donde están todos los
+#'     datos
+#' @return data.frame
+#' @export
+#' @examples
+#' \dontrun{
+#' leer_cuadros_fwf(c("quest", "c001", "c002", "c003", "c004"),
+#'                  columnas = c("cultivo", "precio"),
+#'                  tipo_col = c("integer",
+#'                               rep(c("integer", "double"), 2)),
+#'                  dic = dicc, nomar = "arch.txt")}
+leer_cuadros_fwf <- function(variables, columnas, tipo_col,
+                             dic, nomar) {
+    nv <- length(variables)
+    nc <- length(columnas)
+    cg <- 2:nv
+    ng <- (nv - 1) %/% nc
+    ok <- (nc * ng) == (nv - 1)
+
+    stopifnot("variables no múltiplo de columnas" = ok)
+    x <- tryCatch(leer_datos_fwf(variables, variables, tipo_col,
+                                 dic, nomar),
+                  error = function(e) print(variables))
+
+    names(x)[cg] <- rep(columnas, length.out = nv - 1)
+
+    split(cg, rep(seq_len(ng), each = nc)) %>%
+        map_dfr(function(r) x[, c(1, r)])
+}
+
 #' Campo-CSpro
 #' @description Lee un campo de una base de datos construida con CSpro
 #' @details Entre los argumentos del parámetro "..." puede estar un
@@ -1386,7 +1433,7 @@ leer_campo_cspro <- function(tab_dict = character(),
 #'     almacenada en una sola tabla. El campo "questionnaire" trae los
 #'     datos de las variables en el cuestionario de la encuesta. Cada
 #'     elemento de ese campo corresponde a un cuestionario, y consiste
-#'     de una sola ristra de caracteres dentro de la cual, los datos
+#'     de una sola ristra de caracteres dentro de la cual los datos
 #'     de una variable ocupan una posición y un número de caracteres
 #'     determinado, ambos definidos en el "diccionario de datos". Para
 #'     cargar los datos en un data.frame, la función manda escribir
@@ -1464,7 +1511,7 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
         clase_col <- NA
     }
 
-    #' alternativa es utilizar substring para extraer las variables
+    # alternativa es utilizar substring para extraer las variables
     tf <- tempfile()
     cat(w, file = tf, sep = "\n")
     w <- read.fwf(tf, widths = loncam, col.names = columnas,
@@ -1474,72 +1521,4 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
     unlink(tf)
 
     invisible(w)
-}
-
-#' Cuantos caracteres ocupan las variables en registros Cspro
-#' @description Construye el vector que se pasa como argumento del
-#'     parámetro "loncam" de la función get_data_cspro
-#' @details Los elementos del vector indican el número de caracteres
-#'     que ocupa una variable dentro de la cadena de caracteres de un
-#'     registro, o bien el número de caracteres (número negativo) que
-#'     hay entre dos variables que no están contigüas en el registro.
-#'
-#'     El parámetro "dic" es un data.frame con las columnas "variable"
-#'     y "length" tomadas del diccionario de datos de la tabla de
-#'     Cspro.
-#' @seealso get_data_cspro, read.fwf
-#' @param x character: nombres de las variables
-#' @param dic data.frame con los nombres de las variables y las
-#'     correspondientes longitudes
-#' @return integer
-#' @export
-#' @examples
-#' dd <- data.frame(variable = c("boleta", "nombre", "direccion"),
-#'                  length = c(5, 50, 100))
-#' longitud_variables(c("boleta", "direccion"), dd) #-> c(5, -50, 100)
-longitud_variables <- function(x = character(), dic) {
-    stopifnot("arg. x inadmisible" = is.character(x) && length(x))
-
-    x <- ordenar_conforme(x, dic$variable)
-    
-    m <- match(x, dic$variable) %>% Filter(Negate(is.na), .)
-    if (length(m) < length(x)) {
-        warning("\n... hay variables que no están en diccionario !!!")
-    }
-    k <- seq.int(min(m), max(m))
-
-    z <- dic$variable[k]
-    y <- dic$length[k]
-
-    ## variables enmedio excluidas ("saltar")
-    ## elementos correspondientes a negativo
-    i <- z %in% x
-    y[!i] <- -y[!i]
-
-    ## acumula rachas de negativos
-    ## y pone a 0 todos menos el acumulado
-    n <- length(y)
-    cum <- 0L
-    while(n > 0) {
-        if (y[n] > 0) {
-            cum <- 0L
-        } else {
-            if (cum < 0) {
-                y[n + 1] <- 0L
-            }
-            cum <- cum + y[n]
-            y[n] <- cum
-        }
-        n <- n - 1
-    }
-
-    y <- y[y != 0L]
-
-    ## variables que "saltar" al inicio
-    if (k[1] > 1) {
-        cum <- cumsum(dic$length[seq_len(k[1] - 1)])
-        y <- purrr::prepend(y, -cum)
-    }
-
-    y
 }
