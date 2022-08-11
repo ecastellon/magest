@@ -708,11 +708,11 @@ v_auto <- function(qst, dup) {
 #' duplicar copias
 #' @description Copia los datos de una variable, de los cuestionarios
 #'     «origen» a los cuestionarios «copia»
-#' @param x numeric: datos de la variable
+#' @param x vector atómico: datos de la variable
 #' @param qst numeric: códigos o «id» de los cuestionarios
 #' @param dup numeric: código o «id» del cuestionario «origen» si la
 #'     boleta es «copia»; NA si no es «copia»
-#' @return numeric invisible
+#' @return vector invisible
 #' @examples
 #' aa <- 1:5
 #' bb <- 11:15
@@ -722,8 +722,7 @@ v_auto <- function(qst, dup) {
 #' @author eddy castellón
 duplicar_v <- function(x, qst, dup) {
 
-    stopifnot("arg. inadmisible" = filled_num(x) &&
-                  filled_num(qst) && filled_num(dup) &&
+    stopifnot("arg. inadmisible" = filled_num(qst) && filled_num(dup) &&
                   length(x) == length(qst) &&
                   length(x) == length(dup))
     
