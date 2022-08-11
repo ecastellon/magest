@@ -40,11 +40,13 @@ cada punto. Si hubiera algún un esquema de rotación de la
 muestra y no todos los puntos forman parte de la actual
 selección, el arg. al parám. "dfp" debe haber sido previamente
 filtrado para que contenga sólo los que correspondan. Esto
-permite validar los datos por esa variable.\preformatted{Esta función lo que hace es adjuntar a los registros del
+permite validar los datos por esa variable.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{Esta función lo que hace es adjuntar a los registros del
 data.frame que se pasa como arg. al parám. "dfq" los datos de
 departamento, municipio y estrato que están en el
 arg. parám. "dfp".
-}
+}\if{html}{\out{</div>}}
 }
 \examples{
 \dontrun{

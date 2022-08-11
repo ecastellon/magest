@@ -35,12 +35,14 @@ número de elementos del arg. 'x' debe ser igual al del
 arg. 'busca', y los del arg. 'buscaen' a los del
 arg. 'remplazo'. El modo del arg. 'x' debe ser igual al de
 'remplazo' (excepto cuando arg. 'x' es objeto NULL), y el modo
-del arg. 'busca' al de 'buscaen'.\preformatted{El arg. 'x' es NULL por omisión. En este caso arg. 'x' se
+del arg. 'busca' al de 'buscaen'.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{El arg. 'x' es NULL por omisión. En este caso arg. 'x' se
 inicializa a vector con igual número de elementos de
 arg. 'busca' y mismo modo que arg. 'remplazo'. Los elementos de
 arg. 'x' son ceros o NA, según lo diga el arg. 'toNA'. Son NA
 si arg. 'toNA' es TRUE (por omisión).
-}
+}\if{html}{\out{</div>}}
 }
 \examples{
 x <- letters[1:4]
