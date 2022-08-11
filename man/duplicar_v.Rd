@@ -7,7 +7,7 @@
 duplicar_v(x, qst, dup)
 }
 \arguments{
-\item{x}{numeric: datos de la variable}
+\item{x}{vector atómico: datos de la variable}
 
 \item{qst}{numeric: códigos o «id» de los cuestionarios}
 
