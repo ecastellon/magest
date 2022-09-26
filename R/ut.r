@@ -776,6 +776,60 @@ redondear <- function(x, suma = 100, metodo = "webs",
     ni
 }
 
+#' Cuantil
+#' @description Cuantiles
+#' @details Es una especialización de la función quantile. Las
+#'     probabilidades corren al intervalo fijo indicado en el
+#'     parámetro «cuan», y permite incluir en el cálculo sólo datos
+#'     mayores que 0 y no NA (parámetro «mayor_que_0»).
+#' @param x numeric
+#' @param cuan numeric: intervalo fijo
+#' @param mayor_que_0 logical: sólo datos menor o igual a 0?. TRUE por
+#'     defecto.
+#' @param ... adicionales pasados a función quantile
+#' @return NA o numeric
+#' @export
+#' @examples
+#' cuantil(sample(1:10, 100, replace = TRUE), cuan = 0.1)
+cuantil <- function(x, cuan = 0.25, mayor_que_0 = TRUE, ...) {
+    stopifnot("arg. no numérico" = filled_num(x))
+    
+    if ( mayor_que_0 ) {
+        ii <- x > 0 & no_na(x)
+        x <- x[ii]
+    }
+
+    if ( !is_empty(x) ) {
+        q <- quantile(x, probs = seq(0, 1, cuan), ...)
+    } else {
+        q <- NA_real_
+    }
+    return(q)
+}
+
+#' Decil
+#' @description Deciles de una variable
+#' @param x numeric
+#' @param mayor_que_0 logical: hace el cálculo sólo con los números
+#'     mayor que 0?. TRUE por omisión.
+#' @return numeric o NA_real_
+#' @export
+decil <- function(x, mayor_que_0 = TRUE, ...) {
+    cuantil(x, cuan = 0.1, mayor_que_0, ...)
+}
+
+#' Quintil
+#' @description Quintiles de una variable
+#' @param x numeric
+#' @param mayor_que_0 logical: hace el cálculo sólo con los números
+#'     mayor que 0?. TRUE por omisión.
+#' @param ... parámetros adicionales pasados a la función quantile
+#' @return numeric o NA_real_
+#' @export
+quintil <- function(x, mayor_que_0 = TRUE, ...) {
+    cuantil(x, cuan = 0.2, mayor_que_0, ... )
+}
+
 ## -- validación
 
 #' Positivo
@@ -809,23 +863,4 @@ ypos_ssi_xpos <- function(x, y) {
     ypos_si_xpos(x, y) & ypos_si_xpos(y, x)
 }
 
-#' Decil
-#' @description Deciles de una variable
-#' @param x numeric
-#' @param positivos logical: hace el cálculo sólo con los números
-#'     mayor que 0?. TRUE por omisión.
-#' @return numeric
-#' @export
-decil <- function(x, positivos = TRUE) {
-    if (positivos) {
-        ii <- x > 0
-        if (any(ii)) {
-            quantile(x[ii], seq(0, 1, 0.1))
-        } else {
-            warning("!!! ningún elemento POSITIVO")
-            NA_real_
-        }
-    } else {
-        quantile(x, seq(0, 1, 0.1))
-    }
-}
+
