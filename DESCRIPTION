@@ -19,8 +19,8 @@ Suggests:
 Depends:
         magrittr,
         dplyr,
-        magfoo,
-        openxlsx,
-        purrr
+        magfoo
 Imports:
+        openxlsx,
+        purrr,
         RODBC

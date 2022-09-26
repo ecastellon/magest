@@ -179,6 +179,55 @@ quitar_0.data.frame <- function(df, excepto = character()) {
     invisible(df)
 }
 
+#' Pegar suma columnas
+#' @description Adjuntar la suma de las columnas que no son de tipo
+#'     character.
+#' @details Suma las columnas de tipo numérico o lógico, o las
+#'     columnas especificadas por posición (parámetro «cols»), las
+#'     convierte en una data.frame y lo adjunta al data.frame de
+#'     partida. Las columnas tipo character, o las no especificadas en
+#'     «cols», son puestas a NA en el resultado. Devuelve el
+#'     data.frame original si todas las columnas especificadas son de
+#'     tipo character.
+#' @param df data.frame
+#' @param cols numeric: columnas que se van a sumar. Es opcional.
+#' @return data.frame
+#' @examples
+#' \dontrun{
+#'    x <- data.frame(x = 1:3, y = letters[1:3], z = 2.0)
+#'    pegar_suma_cols(x)
+#'    pegar_suma_cols(x, 3)
+#' }
+#' @export
+pegar_suma_cols <- function(df, cols) {
+    es_num_log <- purrr::map_lgl(x,
+                                 ~ is.numeric(.x) | is.logical(.x))
+
+    if ( any(es_num_log) ) {
+        col_sum <- which(es_num_log)
+        if ( !missing(cols) ) {
+            if ( all(es_num_log[cols]) ) {
+                col_sum <- cols
+            } else {
+                warning("... algunas columnas NO son numéricas",
+                        call. = FALSE)
+                col_sum <- intersect(col_sum, cols)
+            }
+        }
+
+        if ( !is_empty(col_sum) ) {
+            suma_cols <- colSums(df[, col_sum, drop = FALSE],
+                                 na.rm = TRUE)
+
+            df <- as.list(suma_cols) %>%
+                as.data.frame() %>%
+                bind_rows(df, .)
+        }
+    }
+
+    invisible(df)
+}
+
 ## --- strings ---
 
 #' factor a caracter
@@ -413,15 +462,16 @@ en <- function(x, y) match(x, y, nomatch = 0) > 0
 #' @description Convierte a 0 los elementos NA de un vector de modo
 #'     numérico
 #' @param x numeric
-#' @return numeric
+#' @return numeric o NULL
 #' @examples
 #' na0(c(1:3, NA_integer_))
 #' @export
 na0 <- function(x) {
-    if (is.numeric(x)) {
-        x[is.na(x)] <- ifelse(typeof(x) == "integer", 0L, 0.0)
-    }
-    invisible(x)
+    stopifnot("arg. x no válido" = filled_num(x))
+    
+    x[is.na(x)] <- ifelse(typeof(x) == "integer", 0L, 0.0)
+
+    return(x)
 }
 
 #' Cero - NA
@@ -782,7 +832,7 @@ redondear <- function(x, suma = 100, metodo = "webs",
 #'     probabilidades corren al intervalo fijo indicado en el
 #'     parámetro «cuan», y permite incluir en el cálculo sólo datos
 #'     mayores que 0 y no NA (parámetro «mayor_que_0»).
-#' @param x numeric
+#' @param x numeric y con más de un elemento
 #' @param cuan numeric: intervalo fijo
 #' @param mayor_que_0 logical: sólo datos menor o igual a 0?. TRUE por
 #'     defecto.
@@ -791,12 +841,11 @@ redondear <- function(x, suma = 100, metodo = "webs",
 #' @export
 #' @examples
 #' cuantil(sample(1:10, 100, replace = TRUE), cuan = 0.1)
-cuantil <- function(x, cuan = 0.25, mayor_que_0 = TRUE, ...) {
-    stopifnot("arg. no numérico" = filled_num(x))
+cuantiles <- function(x, cuan = 0.25, mayor_que_0 = TRUE, ...) {
+    stopifnot("arg. x no válido" = (!is_scalar0(x)) && is.numeric(x))
     
     if ( mayor_que_0 ) {
-        ii <- x > 0 & no_na(x)
-        x <- x[ii]
+        x <- x[es_pos(x)]
     }
 
     if ( !is_empty(x) ) {
@@ -814,8 +863,8 @@ cuantil <- function(x, cuan = 0.25, mayor_que_0 = TRUE, ...) {
 #'     mayor que 0?. TRUE por omisión.
 #' @return numeric o NA_real_
 #' @export
-decil <- function(x, mayor_que_0 = TRUE, ...) {
-    cuantil(x, cuan = 0.1, mayor_que_0, ...)
+deciles <- function(x, mayor_que_0 = TRUE, ...) {
+    cuantiles(x, cuan = 0.1, mayor_que_0, ...)
 }
 
 #' Quintil
@@ -826,8 +875,8 @@ decil <- function(x, mayor_que_0 = TRUE, ...) {
 #' @param ... parámetros adicionales pasados a la función quantile
 #' @return numeric o NA_real_
 #' @export
-quintil <- function(x, mayor_que_0 = TRUE, ...) {
-    cuantil(x, cuan = 0.2, mayor_que_0, ... )
+quintiles <- function(x, mayor_que_0 = TRUE, ...) {
+    cuantiles(x, cuan = 0.2, mayor_que_0, ... )
 }
 
 ## -- validación
