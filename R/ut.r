@@ -504,12 +504,13 @@ num_entre <- function(x, x1 = numeric(), x2 = numeric(),
 #' }
 #' @export
 #' @author eddy castellón
-dividir <- function(x = double(), y = double(), dec = NA) {
+dividir <- function(x = double(), y = double(), dec = NA_integer_) {
     stopifnot(
         "arg. no numerico" = filled_num(x) && filled_num(y),
         "arg. difiere longitud" = length(x) == length(y) ||
             (length(x) > 1 && length(y) == 1) ||
-            (length(x) == 1 && length(y) > 1)
+            (length(x) == 1 && length(y) > 1),
+        "arg. dec no válido" = is_scalar(dec) && is.numeric(dec)
     )
 
     r <- x / y
@@ -551,7 +552,7 @@ pct <- function(x = numeric(), base = numeric(), dec = 0L,
     }
 
     factor <- ifelse(x100, 100L, 1L)
-    if (all(base == 0 || is.na(base))) {
+    if (all(base == 0 | is.na(base))) {
         pp <- vector("numeric", length(x)) + NA_real_
         warning("base es igual a cero o NA")
     } else {
