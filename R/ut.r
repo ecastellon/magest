@@ -124,6 +124,12 @@ is_scalar_name <- function(x) {
     length(x) == 1L && identical(x, make.names(x))
 }
 
+#' Suma
+#' @description Suma que excluye datos NA
+#' @return function
+#' @export
+suma <- function() purrr::partial(sum, na.rm = TRUE)
+
 ## --- data.frame ---
 #' @export
 quitar_0 <- function(x, excepto) UseMethod("quitar_0")
@@ -362,6 +368,58 @@ ok_fname <- function(x = character()) {
     }
 
     return(ok)
+}
+
+## --- time ---
+
+#' Hoy-Date
+#' @description La fecha en el sistema, convertida en objeto de la
+#'     clase Date
+#' @return Date
+#' @export
+hoy_date <- function() {
+    Sys.time() %>% as.Date()
+}
+
+#' Hoy
+#' @description Fecha en el formato "año-mes-día"
+#' @param sep character: caracter que separa elementos; por omisión
+#'     "-"
+#' @return character
+#' @examples
+#' año_mes_dia() #-> 2022-09-26
+#' @export
+año_mes_dia <- function(sep = "-") {
+    paste("%Y", "%m", "%d", sep = sep) %>%
+        format(Sys.time(), .)
+}
+
+#' Día
+#' @description Fecha actual en el formato
+#'     "día semana.día mes.mes.año"
+#' @return character
+#' @examples dia_mes_año() #-> lun.26.sep.2022
+#' @export
+dia_mes_año <- function() format(Sys.time(), '%a%d.%b%Y')
+
+#' Día-hora
+#' @description Día, mes, año, hora en reloj del sistema
+#' @return character
+#' @examples
+#' dia_hora() #-> 26.sep.2022:19h
+#' @export
+dia_hora <- function() format(Sys.time(), "%d.%b%Y:%Hh")
+
+#' Día-hora-minutos
+#' @description Día, mes, año, hora, minutos en reloj del sistema
+#' @param sep character: separador de elementos; por omisión, "."
+#' @return character
+#' @examples
+#' dia_hora_min() #-> 26.sep.2022:19:43
+dia_hora_min <- function(sep = ".") {
+    fmt <- ifelse(sep == ".", "%d.%b%Y:%H:%M",
+                  paste("%d", "%b", "%Y","%H:%M", sep = sep))
+    Sys.time() %>% format(fmt)
 }
 
 ## --- misc ---
