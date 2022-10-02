@@ -3,7 +3,7 @@
 ##--- funciones para hacer estimaciones --
 
 #' factores
-#' @description Cálcula factor de expansión
+#' @description Calcula factor de expansión
 #' @details El data.frame asociado al parámetro "x" tiene las columnas
 #'     que corresponden a las observaciones (cuestionarios): el
 #'     departamento (integer) y estrato (integer) a los que está
@@ -34,7 +34,7 @@
 #'     "no contactadas", y ponderar el factor por no respuesta. Pero
 #'     de nuevo, el factor que resulte sería válido sólo si los
 #'     "no contactos" estuvieran distribuidos aleatoriamente.
-#' 
+#'
 #' @param x data.frame con los datos de cuestionarios
 #' @param dfe data.frame con los datos de los estratos
 #' @param cob integer con los números de las columnas del data.frame x
@@ -53,10 +53,10 @@
 #' @export
 w_pr <- function(x, dfe, cob = seq.int(3), ces = seq.int(4),
                      tamu = FALSE, dec = 6L) {
-    
+
     ce <- c("dpt", "est", "sup", "tam")
     co <- c("dpt", "est", "sup")
-    
+
     nx <- length(x)
     nd <- length(dfe)
 
@@ -132,7 +132,7 @@ w_pr <- function(x, dfe, cob = seq.int(3), ces = seq.int(4),
 #'     miembros de una misma clase (por ejemplo, todas las fincas en
 #'     un mismo municipio; o todos los productores con tales o cuales
 #'     características).
-#' 
+#'
 #' @param x numérico o caracter: códigos de control del llenado del
 #'     cuestionario
 #' @param cnr numérico o caracter: clases para agrupar los datos
@@ -164,7 +164,7 @@ w_nr <- function(x, cnr, qsr, qnr, dec = 4L) {
         sr <- tapply(x %in% qsr, cn, sum) #responden
         ii <- sr > 0
         fc <- round(nr[ii] / sr[ii], dec)
- 
+
         wr <- 1.0 + remplazar(double(length(x)), fac2char(cn),
                               names(fc), fc, msg = FALSE)
     } else {
@@ -187,7 +187,7 @@ w_nr <- function(x, cnr, qsr, qnr, dec = 4L) {
 #'     selección, el arg. al parám. "dfp" debe haber sido previamente
 #'     filtrado para que contenga sólo los que correspondan. Esto
 #'     permite validar los datos por esa variable.
-#' 
+#'
 #'     Esta función lo que hace es adjuntar a los registros del
 #'     data.frame que se pasa como arg. al parám. "dfq" los datos de
 #'     departamento, municipio y estrato que están en el
@@ -369,7 +369,7 @@ df_fxp <- function(dfq, dfp, qres, ccon = "c5000", cues = "quest",
         all(is.element(c(cues, cdup, ccon), names(dfq)))
         (filled_num(qres) || filled_char(qres)) &&
             all(is.element(qres, unique(dfq[[ccon]])))
- 
+
         ifelse(missing(dfp),
                all(is.element(c(cdpt, cmun, cest), names(dfq))),
                inherits(dfp, "data.frame") &&
@@ -522,7 +522,7 @@ wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
         "arg. inadmisible" = length(cob) == 3 &&
             ((filled_char(cob) && all(is.element(cob, names(dfo)))) ||
             (filled_num(cob) && all(cob <= ncol(dfo))))
- 
+
         "arg. inadmisible" = length(cgr) == 2 &&
             ((filled_char(cgr) && all(is.element(cgr, names(dfg)))) ||
             (filled_num(cgr) && all(cgr <= ncol(dfg))))
@@ -652,7 +652,7 @@ out_remplazo <- function(x, cota = 0.0, fun, mayor = TRUE,
             x[which(ii)] <- rr
         }
     }
-    
+
     invisible(x)
 }
 
@@ -693,7 +693,7 @@ out_remplazo <- function(x, cota = 0.0, fun, mayor = TRUE,
 v_auto <- function(qst, dup) {
     stopifnot("arg. inadmisible" = filled_num(qst) &&
                   filled_num(dup) && length(qst) == length(dup))
-    
+
     ii <- !is.na(dup)
     jj <- dup[ii] %in% qst[ii]
 
@@ -705,7 +705,7 @@ v_auto <- function(qst, dup) {
     }
 }
 
-#' duplicar copias
+#' copiar de origen a copia
 #' @description Copia los datos de una variable, de los cuestionarios
 #'     «origen» a los cuestionarios «copia»
 #' @param x vector atómico: datos de la variable
@@ -726,14 +726,14 @@ duplicar_v <- function(x, qst, dup) {
                   filled_num(dup) &&
                   length(x) == length(qst) &&
                   length(x) == length(dup))
-    
-    ii <- !is.na(dup)
+
+    ii <- no_na(dup)
     mm <- match(dup[ii], qst)
-    jj <- !is.na(mm)
+    jj <- no_na(mm)
     if (any(!jj)) {
         message(sum(!jj), " duplicadas sin origen")
     }
-    
+
     qq <- v_auto(qst, dup)
     if (!is.null(qq)) {
         message("autorreferenciadas no se duplican")
@@ -741,4 +741,39 @@ duplicar_v <- function(x, qst, dup) {
     }
     x[which(ii)[jj]] <- x[mm[jj]]
     invisible(x)
+}
+
+#' Copiar de origen a copia
+#' @description Copiar datos de las boletas origen a las boletas copias
+#' @details Aplica la función \code{duplicar_v} a todas las columnas, excepto
+#'    a la que identifica los cuestionarios y la que lleva los números de
+#'    boleta origen (si es que está en el data.frame). El parámetro «origen»
+#'    es para pasar el nombre de la variable con los números de boleta origen
+#'    y evitar que se modifique. Es importante tener cuidado con el nombre
+#'    pasado como argumento.
+#' @param qst numeric: la columna que identifica los registros; por
+#'    defecto, 1
+#' @param origen character: nombre de la variable con número de boleta origen;
+#'    por defecto, «copiade».
+#' @param dup numeric: vector con los id_reg origen de duplicados
+#' @seealso duplicar_v
+#' @export
+#' @examples
+#'    x <- data.frame(q = 1:3, a = c(10, 20, 30), b = 4:6)
+#'    duplicar_df(x, qst = 1, dup = c(NA, 3, NA))
+duplicar_df <- function(df, qst = 1L, origen = "copiade",
+                       dup = numeric()) {
+    stopifnot("arg.df inválido" = is.data.frame(df) && nrow(df) > 1,
+              "arg.dup inválido" = filled_num(dup) &&
+                                   nrow(df) == length(dup))
+    no <- names(df)[qst]
+    if (hasName(df, origen)) {
+        no <- append(no, origen)
+    }
+    si <- setdiff(names(df), no)
+
+    df %<>% mutate(across(.cols = one_of(si), .fns = duplicar_v,
+                   qst = df[[qst]], dup = dup))
+
+   invisible(df)
 }

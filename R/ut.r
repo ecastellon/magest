@@ -58,7 +58,7 @@ ningun_na <- function(x) !anyNA(x)
 #' @keywords internal
 #' @author eddy castellón
 filled <- function(x) {
-    length(x) > 0
+    length(x) > 0L
 }
 
 #' character type
@@ -128,7 +128,26 @@ is_scalar_name <- function(x) {
 #' @description Suma que excluye datos NA
 #' @return function
 #' @export
-suma <- function() purrr::partial(sum, na.rm = TRUE)
+suma <- purrr::partial(sum, na.rm = TRUE)
+
+#' Suma ponderada
+#' @description Suma pondera que excluye los datos NA
+#' @param x numeric: los datos
+#' @param w numeric: las ponderaciones
+#' @return numeric
+#' @export
+suma_pon <- function(x = numeric(), w = numeric()) {
+    stopifnot("arg.x inválido" = filled_num(x),
+              "arg.w inválido" = filled_num(w) &&
+                                 length(x) == length(w))
+    suma(x * w)
+}
+
+#' Media ponderada
+#' @description Media ponderada que excluye datos NA
+#' @return numeric
+#' @export
+media_pon <- purrr::partial(weighted.mean, na.rm = TRUE)
 
 ## --- data.frame ---
 #' @export
@@ -185,28 +204,31 @@ quitar_0.data.frame <- function(df, excepto = character()) {
     invisible(df)
 }
 
-#' Pegar suma columnas
-#' @description Adjuntar la suma de las columnas que no son de tipo
-#'     character.
-#' @details Suma las columnas de tipo numérico o lógico, o las
-#'     columnas especificadas por posición (parámetro «cols»), las
-#'     convierte en una data.frame y lo adjunta al data.frame de
-#'     partida. Las columnas tipo character, o las no especificadas en
-#'     «cols», son puestas a NA en el resultado. Devuelve el
-#'     data.frame original si todas las columnas especificadas son de
-#'     tipo character.
+#' @export
+anexar_suma_cols <- function(df, cols) UseMethod("anexar_suma_cols")
+
+#' Anexar suma columnas
+#' @description Anexar al data.frame la suma de las columnas tipo numeric o
+#'     logical.
+#' @details Suma todas las columnas de tipo numérico o lógico, o las
+#'     especificadas por posición (parámetro «cols»), del data.frame pasado
+#'     como argumento, y lo regresa con las sumas anexadas después de la
+#'     última fila. La suma descarta los NA. Las columnas tipo character, o
+#'     las no especificadas en «cols», son puestas a NA. Si todas las columnas
+#'     especificadas son de tipo character, devuelve el data.frame sin
+#'     modificar.
 #' @param df data.frame
 #' @param cols numeric: columnas que se van a sumar. Es opcional.
 #' @return data.frame
 #' @examples
 #' \dontrun{
 #'    x <- data.frame(x = 1:3, y = letters[1:3], z = 2.0)
-#'    pegar_suma_cols(x)
-#'    pegar_suma_cols(x, 3)
+#'    anexar_suma_cols(x)
+#'    anexar_suma_cols(x, 3)
 #' }
 #' @export
-pegar_suma_cols <- function(df, cols) {
-    es_num_log <- purrr::map_lgl(x,
+anexar_suma_cols.data.frame <- function(df, cols) {
+    es_num_log <- purrr::map_lgl(df,
                                  ~ is.numeric(.x) | is.logical(.x))
 
     if ( any(es_num_log) ) {
@@ -221,7 +243,7 @@ pegar_suma_cols <- function(df, cols) {
             }
         }
 
-        if ( !is_empty(col_sum) ) {
+        if ( filled(col_sum) ) {
             suma_cols <- colSums(df[, col_sum, drop = FALSE],
                                  na.rm = TRUE)
 
@@ -277,12 +299,12 @@ podar_str <- function(x = character()) {
 
     ii <- is.na(x)
     x[ii] <- ""
-    
+
     r <- regexpr("\\b.*\\b", x, perl = TRUE)
     w <- vector("character", length = length(x))
     ## is.na(x) -> is.na(r) y error en asig. con índice
     w[r > 0] <- regmatches(x, r)
-    
+
     w[ii] <- NA_character_
     w
 }
@@ -467,8 +489,8 @@ casar <- function(..., msg = TRUE, sinpar = FALSE) {
     if (n == 1 ) {
         return(seq_along(x[[1]]))
     }
-    
-    
+
+
     if (n > 2) {
         if (!es_par(n)) {
             warning("... casar(...) número de argumentos no es par !!!",
@@ -483,7 +505,7 @@ casar <- function(..., msg = TRUE, sinpar = FALSE) {
     } else {
         names(x) <- c("x", "table")
     }
-    
+
     m <- do.call("match", x)
     o <- is.na(m)
     if (any(o)) {
@@ -525,8 +547,8 @@ en <- function(x, y) match(x, y, nomatch = 0) > 0
 #' na0(c(1:3, NA_integer_))
 #' @export
 na0 <- function(x) {
-    stopifnot("arg. x no válido" = filled_num(x))
-    
+    stopifnot("arg. x inadmisible" = filled_num(x))
+
     x[is.na(x)] <- ifelse(typeof(x) == "integer", 0L, 0.0)
 
     return(x)
@@ -538,10 +560,10 @@ na0 <- function(x) {
 #' @return numeric
 #' @export
 cero_na <- function(x) {
-    stopifnot("arg. x inválido" = is.numeric(x))
+    stopifnot("arg. x inadmisible" = filled_num(x))
     na <- ifelse(typeof(x) == "integer", NA_integer_, NA_real_)
     x[x == 0] <- na
-    invisible(x)
+    return(x)
 }
 
 #' NA a character
@@ -554,7 +576,7 @@ na_char <- function(x, a = "") {
     if ( is.character(x) ) {
         x[is.na(x)] <- a
     }
-    invisible(x)
+    return(x)
 }
 
 #' Número-entre
@@ -844,10 +866,10 @@ redondear <- function(x, suma = 100, metodo = "webs",
                     jeff = 1.0,
                     adam = 0.0)
     }
-    
+
     n <- length(x)
     wi <- x / sum(x)
-    
+
     ## num. iter. = n / 2
     nu <- suma + n * (q - 0.5) ## multiplier "óptimo"
     ni <- nu * wi
@@ -856,7 +878,7 @@ redondear <- function(x, suma = 100, metodo = "webs",
     ## sign post
     sp  <- seq(min(ni) - 1L, max(ceiling(ni)) + 1L) + q
     ni <- floor(ni + 1.0 - q)
-    
+
     zi <- integer(n)
     dt <- sum(ni) - suma
     while (abs(dt) <= eps) {
@@ -901,7 +923,7 @@ redondear <- function(x, suma = 100, metodo = "webs",
 #' cuantil(sample(1:10, 100, replace = TRUE), cuan = 0.1)
 cuantiles <- function(x, cuan = 0.25, mayor_que_0 = TRUE, ...) {
     stopifnot("arg. x no válido" = (!is_scalar0(x)) && is.numeric(x))
-    
+
     if ( mayor_que_0 ) {
         x <- x[es_pos(x)]
     }
@@ -970,4 +992,36 @@ ypos_ssi_xpos <- function(x, y) {
     ypos_si_xpos(x, y) & ypos_si_xpos(y, x)
 }
 
-
+#' Datos fuera de rango
+#' @description Identifica los datos que están fuera del rango especificado
+#'     por los límites «inf» y «sup»
+#' @details Los límites del rango, si no son pasados como argumentos, se
+#'     construyen multiplicando una referencia (parámetro «ref») por un factor
+#'     dependiente de una fracción (parámetro «frac»). El factor para calcular
+#'     el límite superior es (1 + frac) y (1 - frac) para el inferior. Los
+#'     datos NA no se toman en cuenta.
+#' @param x numeric: los datos
+#' @param ref numeric: la referencia o punto central; por omisión, el promedio
+#'     de los datos
+#' @param frac numeric: valor mayor que cero; por omisión, 0.1
+#' @param inf numeric: límite inferior del rango
+#' @param sup numeric: límite superior del rango
+#' @return logical
+#' @export
+#' @examples
+#' x <- 1:5
+#' fuera_de_rango(x, inf = 2, sup = 4)
+#' fuera_de_rango(x, inf = 1, ref = 2)
+#' fuera_de_rango(x, ref = 2, frac = 0.9)
+#' fuera_de_rango(x, ref = median(x), frac = 1.5)
+#' fuera_de_rango(x, ref = mean(x, na.rm = TRUE),
+#'                sup = ref + 2 * sd(x, na.rm = TRUE)))
+fuera_de_rango <- function(x, ref = mean(x, na.rm = TRUE), frac = 0.1,
+                           inf = ref * (1.0 - frac),
+                           sup = ref * (1.0 + frac)) {
+    stopifnot("arg. x inadmisible" = filled_num(x) &&
+                                     is.numeric(ref) && is.numeric(sup) &&
+                                     is.numeric(inf))
+    x[is.na(x)] <- inf + (sup - inf) / 2.0
+    !num_entre(x, inf, sup)
+}
