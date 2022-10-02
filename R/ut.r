@@ -131,7 +131,7 @@ is_scalar_name <- function(x) {
 suma <- purrr::partial(sum, na.rm = TRUE)
 
 #' Suma ponderada
-#' @description Suma pondera que excluye los datos NA
+#' @description Suma pondera que excluye los datos y las ponderaciones NA
 #' @param x numeric: los datos
 #' @param w numeric: las ponderaciones
 #' @return numeric
@@ -254,6 +254,77 @@ anexar_suma_cols.data.frame <- function(df, cols) {
     }
 
     invisible(df)
+}
+
+#' @export
+normalizar_data <- function(df, cols) UseMethod("normalizar_data")
+
+#' Normalizar data.frame
+#' @description Normaliza un data.frame que tiene datos de la misma
+#'     variable en diferentes columnas
+#' @details En la documentación de la librería «tidyr» y en el
+#'     artículo de H.Wickham ahí referido, se discuten varios casos de
+#'     tablas de datos no normalizadas. Uno que es frecuente, es
+#'     cuando en la misma unidad de información (unidad de muestreo,
+#'     en las encuestas) se mide la misma variable en diferentes
+#'     fechas o en distintas partes de la unidad, como es el caso, en
+#'     las encuestas agrícolas, cuando en la misma finca se anotan las
+#'     superficies sembradas de diferentes cultivos. En tales casos se
+#'     puede terminar con una tabla de datos como la siguiente:
+#' 
+#'     quest c231 c234 c451 c454
+#'     10500    1    2    2    3
+#'     10510    0    0    2    6
+#' 
+#'     donde la columna quest trae los datos del «id» de la finca,
+#'     c234 y c451 los datos del cultivo, y c234 y c454 las manzanas
+#'     sembradas de los cultivos en cuestión. En realidad sólo hay dos
+#'     variables: «cultivo» y «sembrada». Uno de los problemas con la
+#'     falta de normalización es que la tabla puede llevar muchos
+#'     datos «basura», como son (en el ejemplo) las dos primeras
+#'     columnas de la segunda fila.
+#'
+#'     La tabla normalizada luciría como se muestra adelante. Ahí ya
+#'     se ve la economía de almacenamiento: 9 datos en lugar de los 10
+#'     en la no normalizada
+#' 
+#'     quest cultivo sembrada
+#'     10500       1        2
+#'     10500       2        3
+#'     10510       2        6
+#'
+#'     En la librería ya existe una función que devuelve la expresión
+#'     SQL que produce una tabla normalizada cuando se leen los
+#'     datos: «xsql_t»
+#' @seealso xsql_t
+#' @param df data.frame
+#' @param col_id numeric: columna con el índice (id) de los datos
+#' @param vbl character: nombre de las variables del data.frame
+#'     resultado
+#' @return data.frame
+#' @export
+#' @examples
+#' x <- data.frame(q = 1:4, a = sample(1:4), b = sample(2 * (1:4)),
+#'                 d = sample(3 * 1:4), e = sample(2 * (1:4)))
+#' normalizar_data(x, 1, c("xx", "yy"))
+normalizar_data.data.frame <- function(df, col_id, vbl = character()) {
+
+    nm <- names(df)
+    
+    y <- tidyr::pivot_longer(df, nm[-col_id], names_to = "vb",
+                             values_to = "y")
+
+    ng <- (length(nm) - 1L) %/% length(vbl)
+
+    y["vb"] <- rep(vbl, ng * nrow(df))
+    y["id"] <- rep(seq_len(nrow(df) * ng), each = ng)
+
+    z <- tidyr::pivot_wider(y, id_cols = "id", names_from = "vb",
+                            values_from = "y")
+
+    z[nm[col_id]] <- rep(df[[col_id]], each = ng)
+
+    z
 }
 
 ## --- strings ---
@@ -422,7 +493,7 @@ año_mes_dia <- function(sep = "-") {
 #' @return character
 #' @examples dia_mes_año() #-> lun.26.sep.2022
 #' @export
-dia_mes_año <- function() format(Sys.time(), '%a%d.%b%Y')
+dia_mes_año <- function() format(Sys.time(), "%a%d.%b%Y")
 
 #' Día-hora
 #' @description Día, mes, año, hora en reloj del sistema
@@ -486,7 +557,7 @@ casar <- function(..., msg = TRUE, sinpar = FALSE) {
     x <- list(...)
 
     n <- length(x)
-    if (n == 1 ) {
+    if ( n == 1 ) {
         return(seq_along(x[[1]]))
     }
 
@@ -684,7 +755,7 @@ pct <- function(x = numeric(), base = numeric(), dec = 0L,
     factor <- ifelse(x100, 100L, 1L)
     if (all(base == 0 | is.na(base))) {
         pp <- vector("numeric", length(x)) + NA_real_
-        warning("base es igual a cero o NA")
+        warning("base es igual a cero o NA", call. = FALSE)
     } else {
         pp <- round(factor * dividir(x, base, NA), dec)
     }
@@ -906,21 +977,22 @@ redondear <- function(x, suma = 100, metodo = "webs",
     ni
 }
 
-#' Cuantil
+#' Cuantiles
 #' @description Cuantiles
 #' @details Es una especialización de la función quantile. Las
 #'     probabilidades corren al intervalo fijo indicado en el
 #'     parámetro «cuan», y permite incluir en el cálculo sólo datos
 #'     mayores que 0 y no NA (parámetro «mayor_que_0»).
+#' @seealso quantile, deciles, quintiles
 #' @param x numeric y con más de un elemento
 #' @param cuan numeric: intervalo fijo
-#' @param mayor_que_0 logical: sólo datos menor o igual a 0?. TRUE por
+#' @param mayor_que_0 logical: excluir datos menor o igual a cero?. TRUE por
 #'     defecto.
 #' @param ... adicionales pasados a función quantile
 #' @return NA o numeric
 #' @export
 #' @examples
-#' cuantil(sample(1:10, 100, replace = TRUE), cuan = 0.1)
+#' cuantiles(sample(1:10, 100, replace = TRUE), cuan = 0.1)
 cuantiles <- function(x, cuan = 0.25, mayor_que_0 = TRUE, ...) {
     stopifnot("arg. x no válido" = (!is_scalar0(x)) && is.numeric(x))
 
@@ -936,28 +1008,23 @@ cuantiles <- function(x, cuan = 0.25, mayor_que_0 = TRUE, ...) {
     return(q)
 }
 
-#' Decil
-#' @description Deciles de una variable
+#' Deciles
+#' @description Deciles de una variable numérica
 #' @param x numeric
-#' @param mayor_que_0 logical: hace el cálculo sólo con los números
-#'     mayor que 0?. TRUE por omisión.
+#' @param ... parámetros adicionales pasados a \code{cuantiles}
+#' @seealso cuantiles
 #' @return numeric o NA_real_
 #' @export
-deciles <- function(x, mayor_que_0 = TRUE, ...) {
-    cuantiles(x, cuan = 0.1, mayor_que_0, ...)
-}
+deciles <- purrr::partial(cuantiles, cuan = 0.1)
 
-#' Quintil
-#' @description Quintiles de una variable
+#' Quintiles
+#' @description Quintiles de una variable numérica
 #' @param x numeric
-#' @param mayor_que_0 logical: hace el cálculo sólo con los números
-#'     mayor que 0?. TRUE por omisión.
-#' @param ... parámetros adicionales pasados a la función quantile
+#' @param ... parámetros adicionales pasados a \code{cuantiles}
+#' @seealso cuantiles
 #' @return numeric o NA_real_
 #' @export
-quintiles <- function(x, mayor_que_0 = TRUE, ...) {
-    cuantiles(x, cuan = 0.2, mayor_que_0, ... )
-}
+quintiles <- purrr::partial(cuantiles, cuan = 0.2)
 
 ## -- validación
 
@@ -994,12 +1061,13 @@ ypos_ssi_xpos <- function(x, y) {
 
 #' Datos fuera de rango
 #' @description Identifica los datos que están fuera del rango especificado
-#'     por los límites «inf» y «sup»
-#' @details Los límites del rango, si no son pasados como argumentos, se
+#'     por los límites «inf» y «sup». Los límites no son incluidos en el rango.
+#' @details Los límites del intervalo, si no son pasados como argumentos, se
 #'     construyen multiplicando una referencia (parámetro «ref») por un factor
 #'     dependiente de una fracción (parámetro «frac»). El factor para calcular
-#'     el límite superior es (1 + frac) y (1 - frac) para el inferior. Los
-#'     datos NA no se toman en cuenta.
+#'     el límite superior es (1 + frac), y para el inferior, (1 - frac). Los
+#'     datos NA se excluyen y se devuelven como tales, de modo que al usar el
+#'     resultado debe tomarse en cuenta esa posibilidad.
 #' @param x numeric: los datos
 #' @param ref numeric: la referencia o punto central; por omisión, el promedio
 #'     de los datos
@@ -1022,6 +1090,9 @@ fuera_de_rango <- function(x, ref = mean(x, na.rm = TRUE), frac = 0.1,
     stopifnot("arg. x inadmisible" = filled_num(x) &&
                                      is.numeric(ref) && is.numeric(sup) &&
                                      is.numeric(inf))
-    x[is.na(x)] <- inf + (sup - inf) / 2.0
-    !num_entre(x, inf, sup)
+    na <- is.na(x)
+    x[na] <- inf + (sup - inf) / 2.0
+    ne <- !num_entre(x, inf, sup)
+    ne[na] <- NA
+    return(ne)
 }
