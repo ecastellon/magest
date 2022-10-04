@@ -653,6 +653,10 @@ na_char <- function(x, a = "") {
 #' Número-entre
 #' @description Comprueba si un número está entre los límites de un
 #'     intervalo
+#' @details La diferencia con la función \code{between} de la librería
+#'     dplyr, es que los datos NA se consideran fuera del intervalo, y
+#'     que el parámetro «inclusive» determina si el intervalo incluye
+#'     o no, a los límites.
 #' @param x numeric
 #' @param x1 numeric: límite inferior
 #' @param x2 numeric: límite superior
@@ -677,9 +681,12 @@ num_entre <- function(x, x1 = numeric(), x2 = numeric(),
             (n > 1 & n == n2 & n1 == 1L)
     })
 
-    tf <- x > x1 & x < x2
+    x[is.na(x)] <- x2 + 1
+
     if (inclusive) {
-        tf <- tf | x == x1 | x == x2
+        tf <- x >= x1 & x <= x2
+    } else {
+        tf <- x > x1 & x < x2
     }
 
     tf
