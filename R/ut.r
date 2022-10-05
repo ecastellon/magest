@@ -271,11 +271,11 @@ normalizar_data <- function(df, cols) UseMethod("normalizar_data")
 #'     las encuestas agrícolas, cuando en la misma finca se anotan las
 #'     superficies sembradas de diferentes cultivos. En tales casos se
 #'     puede terminar con una tabla de datos como la siguiente:
-#' 
+#'
 #'     quest c231 c234 c451 c454
 #'     10500    1    2    2    3
 #'     10510    0    0    2    6
-#' 
+#'
 #'     donde la columna quest trae los datos del «id» de la finca,
 #'     c234 y c451 los datos del cultivo, y c234 y c454 las manzanas
 #'     sembradas de los cultivos en cuestión. En realidad sólo hay dos
@@ -287,7 +287,7 @@ normalizar_data <- function(df, cols) UseMethod("normalizar_data")
 #'     La tabla normalizada luciría como se muestra adelante. Ahí ya
 #'     se ve la economía de almacenamiento: 9 datos en lugar de los 10
 #'     en la no normalizada
-#' 
+#'
 #'     quest cultivo sembrada
 #'     10500       1        2
 #'     10500       2        3
@@ -310,7 +310,7 @@ normalizar_data <- function(df, cols) UseMethod("normalizar_data")
 normalizar_data.data.frame <- function(df, col_id, vbl = character()) {
 
     nm <- names(df)
-    
+
     y <- tidyr::pivot_longer(df, nm[-col_id], names_to = "vb",
                              values_to = "y")
 
@@ -653,10 +653,11 @@ na_char <- function(x, a = "") {
 #' Número-entre
 #' @description Comprueba si un número está entre los límites de un
 #'     intervalo
-#' @details La diferencia con la función \code{between} de la librería
-#'     dplyr, es que los datos NA se consideran fuera del intervalo, y
-#'     que el parámetro «inclusive» determina si el intervalo incluye
-#'     o no, a los límites.
+#' @details Tres diferencias con la función \code{between} de la librería
+#'     dplyr: (a) los datos NA se consideran fuera del intervalo;
+#'     (b) el parámetro «inclusive» determina si el intervalo incluye
+#'     o no, a los límites (FALSE por defecto); (c) los argumentos a los
+#'     parámetros «x1» y «x2» pueden tener longitud igual al pasado en «x».
 #' @param x numeric
 #' @param x1 numeric: límite inferior
 #' @param x2 numeric: límite superior
@@ -666,20 +667,21 @@ na_char <- function(x, a = "") {
 #' @examples
 #' num_entre(2, 1, 2, TRUE)
 #' num_entre(2, 1, 2)
+#' num_entre(1:3, 2, 2:4, TRUE)
+#' num_entre(1:3, 0:2, 2:4, TRUE)
 #' @export
 num_entre <- function(x, x1 = numeric(), x2 = numeric(),
                       inclusive = FALSE) {
+
+    stopifnot("arg. x inválido" = filled_num(x),
+              "arg. x1 inválido" = filled_num(x1),
+              "arg. x2 inválido" = filled_num(x2))
     n <- length(x)
     n1 <- length(x1)
     n2 <- length(x2)
-    stopifnot(exprs = {
-        "arg. x inválido" = filled_num(x)
-        "arg. x1 inválido" = filled_num(x1)
-        "arg. x2 inválido" = filled_num(x2)
-        "arg. x incomp. x1,x2" = (n >= 1L & n1 == 1L & n2 == 1L) ||
-            (n > 1 & n == n1 & (n2 == 1L | n2 == n1)) ||
-            (n > 1 & n == n2 & n1 == 1L)
-    })
+    stopifnot("arg. x incomp. x1,x2" = (n >= 1L & n1 == 1L & n2 == 1L) ||
+              (n > 1 & n == n1 & (n2 == 1L | n2 == n1)) ||
+              (n > 1 & n == n2 & n1 == 1L))
 
     x[is.na(x)] <- x2 + 1
 
@@ -690,6 +692,59 @@ num_entre <- function(x, x1 = numeric(), x2 = numeric(),
     }
 
     tf
+}
+#' Datos fuera de rango
+#' @description Identifica los datos que están fuera del rango especificado
+#'     por los límites «inf» y «sup». Los límites no son incluidos en el rango.
+#' @details Los límites del intervalo, si no son pasados como argumentos, se
+#'     construyen multiplicando una referencia (parámetro «ref») por un factor
+#'     dependiente de una fracción (parámetro «frac»). El factor para calcular
+#'     el límite superior es (1 + frac), y para el inferior, (1 - frac). Los
+#'     datos NA se excluyen y se devuelven como tales, de modo que al usar el
+#'     resultado debe tomarse en cuenta esa posibilidad.
+#' @param x numeric: los datos
+#' @param ref numeric: la referencia o punto central; por omisión, el promedio
+#'     de los datos
+#' @param frac numeric: valor mayor que cero; por omisión, 0.1
+#' @param inf numeric: límite inferior del rango
+#' @param sup numeric: límite superior del rango
+#' @return logical
+#' @export
+#' @examples
+#' x <- 1:5
+#' fuera_de_rango(x, inf = 2, sup = 4)
+#' fuera_de_rango(x, inf = 1, ref = 2)
+#' fuera_de_rango(x, ref = 2, frac = 0.9)
+#' fuera_de_rango(x, ref = median(x), frac = 1.5)
+#' fuera_de_rango(x, ref = mean(x, na.rm = TRUE),
+#'                sup = ref + 2 * sd(x, na.rm = TRUE)))
+en_intervalo <- function(x, ref, frac = 0.1, inf, sup, ...) {
+    stopifnot("arg. x inadmisible" = filled_num(x),
+              "arg. frac inadmisible" = is_scalar(frac) && is.numeric(frac))
+
+    if (missing(ref)) {
+        ref <- mean
+    }
+
+    if (is.function(ref)) {
+        cen <- ref(x, ...)
+    } else {
+        if (is_scalar(ref) && is.numeric(ref)) {
+            cen <- ref
+        } else {
+            warning("\n ...ref NO ES admisible!!!", call. = FALSE)
+            out <- NA_integer_
+        }
+    }
+
+    if (missing(frac)) frac <- 0.1
+    if (missing(inf)) inf <- ref * (1.0 - frac)
+    if (missing(sup)) sup <- ref * (1.0 + frac)
+
+    na <- is.na(x)
+    out <- num_entre(x, inf, sup)
+    out[na] <- NA
+    out
 }
 
 #' División
@@ -1066,40 +1121,3 @@ ypos_ssi_xpos <- function(x, y) {
     ypos_si_xpos(x, y) & ypos_si_xpos(y, x)
 }
 
-#' Datos fuera de rango
-#' @description Identifica los datos que están fuera del rango especificado
-#'     por los límites «inf» y «sup». Los límites no son incluidos en el rango.
-#' @details Los límites del intervalo, si no son pasados como argumentos, se
-#'     construyen multiplicando una referencia (parámetro «ref») por un factor
-#'     dependiente de una fracción (parámetro «frac»). El factor para calcular
-#'     el límite superior es (1 + frac), y para el inferior, (1 - frac). Los
-#'     datos NA se excluyen y se devuelven como tales, de modo que al usar el
-#'     resultado debe tomarse en cuenta esa posibilidad.
-#' @param x numeric: los datos
-#' @param ref numeric: la referencia o punto central; por omisión, el promedio
-#'     de los datos
-#' @param frac numeric: valor mayor que cero; por omisión, 0.1
-#' @param inf numeric: límite inferior del rango
-#' @param sup numeric: límite superior del rango
-#' @return logical
-#' @export
-#' @examples
-#' x <- 1:5
-#' fuera_de_rango(x, inf = 2, sup = 4)
-#' fuera_de_rango(x, inf = 1, ref = 2)
-#' fuera_de_rango(x, ref = 2, frac = 0.9)
-#' fuera_de_rango(x, ref = median(x), frac = 1.5)
-#' fuera_de_rango(x, ref = mean(x, na.rm = TRUE),
-#'                sup = ref + 2 * sd(x, na.rm = TRUE)))
-fuera_de_rango <- function(x, ref = mean(x, na.rm = TRUE), frac = 0.1,
-                           inf = ref * (1.0 - frac),
-                           sup = ref * (1.0 + frac)) {
-    stopifnot("arg. x inadmisible" = filled_num(x) &&
-                                     is.numeric(ref) && is.numeric(sup) &&
-                                     is.numeric(inf))
-    na <- is.na(x)
-    x[na] <- inf + (sup - inf) / 2.0
-    ne <- !num_entre(x, inf, sup)
-    ne[na] <- NA
-    return(ne)
-}
