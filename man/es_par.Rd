@@ -13,6 +13,5 @@ es_par(x)
 logical
 }
 \description{
-Es número par
+Es número par?
 }
-\keyword{internal}
