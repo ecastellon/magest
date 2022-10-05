@@ -23,7 +23,16 @@ logical
 Comprueba si un número está entre los límites de un
 intervalo
 }
+\details{
+Tres diferencias con la función \code{between} de la librería
+dplyr: (a) los datos NA se consideran fuera del intervalo;
+(b) el parámetro «inclusive» determina si el intervalo incluye
+o no, a los límites (FALSE por defecto); (c) los argumentos a los
+parámetros «x1» y «x2» pueden tener longitud igual al pasado en «x».
+}
 \examples{
 num_entre(2, 1, 2, TRUE)
 num_entre(2, 1, 2)
+num_entre(1:3, 2, 2:4, TRUE)
+num_entre(1:3, 0:2, 2:4, TRUE)
 }

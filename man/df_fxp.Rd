@@ -73,10 +73,8 @@ parámetros "dft" y "dfp" son opcionales si es que arg. "dfq"
 contiene todas las columnas en la lista de parámetros. Si se
 pasa arg. al parámetro "dfp", este debe corresponder a los
 puntos de la muestra actual; es decir, debe haberse filtrado
-antes si hubiera algún esquema de rotación de la muestra.
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{La función llama las funciones preparar_pto y preparar_sup.
-}\if{html}{\out{</div>}}
+antes si hubiera algún esquema de rotación de la muestra.\preformatted{La función llama las funciones preparar_pto y preparar_sup.
+}
 }
 \examples{
 \dontrun{

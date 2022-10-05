@@ -1,155 +1,9 @@
 # -*- coding: utf-8 -*-
 
-## --- utilidad general --
-#' length
-#' @description vector has length equal zero
-#' @param x vector
-#' @return logical
-#' @keywords internal
-is_vacuo <- function(x) {
-    length(x) == 0L
-}
-
-#' length
-#' @description vector has length equal zero
-#' @param x vector
-#' @return logical
-#' @keywords internal
-is_empty <- function(x) {
-    length(x) == 0L
-}
-
-#' Escalar
-#' @description Es vector con un elemento?
-#' @param x vector
-#' @return logical
-#' @keywords internal
-is_scalar <- function(x) {
-    length(x) == 1L
-}
-
-#' Escalar
-#' @description Es vector vacío o con un elemento?
-#' @param x vector
-#' @return logical
-#' @keywords internal
-is_scalar0 <- function(x) {
-    length(x) <= 1L
-}
-
-#' no na
-#' @description No es NA
-#' @param x vector
-#' @return logical
-#' @export
-no_na <- function(x) !is.na(x)
-
-#' ningún NA
-#' @description Ningún elemento es NA
-#' @param x vector
-#' @return logical
-#' @export
-ningun_na <- function(x) !anyNA(x)
-
-#' length
-#' @description vector has length greater than zero?
-#' @param x vector
-#' @return logical
-#' @keywords internal
-#' @author eddy castellón
-filled <- function(x) {
-    length(x) > 0L
-}
-
-#' character type
-#' @description vector is of character type and has elements?
-#' @param x vector
-#' @return logical
-#' @keywords internal
-filled_char <- function(x) {
-    is.character(x) && length(x)
-}
-
-#' numeric mode
-#' @description vector is of numeric mode and has elements?
-#' @param x vector
-#' @return logical
-#' @keywords internal
-filled_num <- function(x) {
-    is.numeric(x) && length(x)
-}
-
-#' integer type
-#' @description vector is of integer type and has elements?
-#' @param x vector
-#' @return logical
-#' @keywords internal
-filled_int <- function(x) {
-    is.integer(x) && length(x)
-}
-
-#' logical type
-#' @description vector is of logical type and has elements?
-#' @param x vector
-#' @return logical
-#' @keywords internal
-filled_log <- function(x) {
-    is.logical(x) && length(x)
-}
-
-#' list-no-vac
-#' @description vector is of logical type and has elements?
-#' @param x vector
-#' @return logical
-#' @keywords internal
-filled_list <- function(x) {
-    is.list(x) && length(x)
-}
-
-#' valida-name
-#' @description Valida nombres de variables
-#' @param x vector
-#' @return logical
-#' @keywords internal
-is_name <- function(x) {
-    length(x) && identical(x, make.names(x))
-}
-
-#' nombre-scalar
-#' @description Valida nombre escalar
-#' @param x vector
-#' @return logical
-#' @keywords internal
-is_scalar_name <- function(x) {
-    length(x) == 1L && identical(x, make.names(x))
-}
-
-#' Suma
-#' @description Suma que excluye datos NA
-#' @return function
-#' @export
-suma <- purrr::partial(sum, na.rm = TRUE)
-
-#' Suma ponderada
-#' @description Suma pondera que excluye los datos y las ponderaciones NA
-#' @param x numeric: los datos
-#' @param w numeric: las ponderaciones
-#' @return numeric
-#' @export
-suma_pon <- function(x = numeric(), w = numeric()) {
-    stopifnot("arg.x inválido" = filled_num(x),
-              "arg.w inválido" = filled_num(w) &&
-                                 length(x) == length(w))
-    suma(x * w)
-}
-
-#' Media ponderada
-#' @description Media ponderada que excluye datos NA
-#' @return numeric
-#' @export
-media_pon <- purrr::partial(weighted.mean, na.rm = TRUE)
+## --- utilidad general ---
 
 ## --- data.frame ---
+
 #' @export
 quitar_0 <- function(x, excepto) UseMethod("quitar_0")
 
@@ -479,9 +333,9 @@ hoy_date <- function() {
 #' @param sep character: caracter que separa elementos; por omisión
 #'     "-"
 #' @return character
+#' @export
 #' @examples
 #' año_mes_dia() #-> 2022-09-26
-#' @export
 año_mes_dia <- function(sep = "-") {
     paste("%Y", "%m", "%d", sep = sep) %>%
         format(Sys.time(), .)
@@ -491,22 +345,23 @@ año_mes_dia <- function(sep = "-") {
 #' @description Fecha actual en el formato
 #'     "día semana.día mes.mes.año"
 #' @return character
-#' @examples dia_mes_año() #-> lun.26.sep.2022
 #' @export
+#' @examples dia_mes_año() #-> lun.26.sep.2022
 dia_mes_año <- function() format(Sys.time(), "%a%d.%b%Y")
 
 #' Día-hora
 #' @description Día, mes, año, hora en reloj del sistema
 #' @return character
+#' @export
 #' @examples
 #' dia_hora() #-> 26.sep.2022:19h
-#' @export
 dia_hora <- function() format(Sys.time(), "%d.%b%Y:%Hh")
 
 #' Día-hora-minutos
 #' @description Día, mes, año, hora, minutos en reloj del sistema
 #' @param sep character: separador de elementos; por omisión, "."
 #' @return character
+#' @export
 #' @examples
 #' dia_hora_min() #-> 26.sep.2022:19:43
 dia_hora_min <- function(sep = ".") {
@@ -516,16 +371,6 @@ dia_hora_min <- function(sep = ".") {
 }
 
 ## --- misc ---
-
-#' Par
-#' @description Es número par
-#' @param x numeric
-#' @return logical
-#' @keywords internal
-es_par <- function(x) {
-    stopifnot("arg.x no es numérico" = filled_num(x))
-    x %% 2 == 0
-}
 
 #' Aparear
 #' @description Match de dos o más vectores
@@ -601,13 +446,21 @@ parear <- function(x, y) {
     casar(x, y)
 }
 
-#' Alias %in%
-#' @description Operador infijo %in% como función
+## === NA ===
+
+#' no na
+#' @description No es NA
 #' @param x vector
-#' @param y vector
 #' @return logical
 #' @export
-en <- function(x, y) match(x, y, nomatch = 0) > 0
+no_na <- function(x) !is.na(x)
+
+#' ningún NA
+#' @description Ningún elemento es NA
+#' @param x vector
+#' @return logical
+#' @export
+ningun_na <- function(x) !anyNA(x)
 
 #' NA a cero
 #' @description Convierte a 0 los elementos NA de un vector de modo
@@ -649,6 +502,16 @@ na_char <- function(x, a = "") {
     }
     return(x)
 }
+
+## === intervalos ===
+
+#' Alias %in%
+#' @description Operador infijo %in% como función
+#' @param x vector
+#' @param y vector
+#' @return logical
+#' @export
+en <- function(x, y) match(x, y, nomatch = 0) > 0
 
 #' Número-entre
 #' @description Comprueba si un número está entre los límites de un
@@ -693,38 +556,51 @@ num_entre <- function(x, x1 = numeric(), x2 = numeric(),
 
     tf
 }
-#' Datos fuera de rango
-#' @description Identifica los datos que están fuera del rango especificado
-#'     por los límites «inf» y «sup». Los límites no son incluidos en el rango.
-#' @details Los límites del intervalo, si no son pasados como argumentos, se
-#'     construyen multiplicando una referencia (parámetro «ref») por un factor
-#'     dependiente de una fracción (parámetro «frac»). El factor para calcular
-#'     el límite superior es (1 + frac), y para el inferior, (1 - frac). Los
-#'     datos NA se excluyen y se devuelven como tales, de modo que al usar el
-#'     resultado debe tomarse en cuenta esa posibilidad.
+
+#' Datos están en intervalo
+#' @description Identifica los datos comprendidos en el intervalo
+#'     delimitado por «inf» y «sup».
+#' @details Los límites del intervalo, si no son pasados como
+#'     argumentos, se construyen multiplicando una referencia
+#'     (parámetro «ref») por un factor dependiente de una fracción
+#'     (parámetro «frac»). El factor para calcular el límite superior
+#'     es (1 + frac), y para el inferior, (1 - frac). Los datos NA se
+#'     excluyen y se devuelven tal cuales. El intervalo puede ser
+#'     cerrado o abierto, según el parámetro «inclusive»
+#'
+#'     Si es omitido «ref», se asume que la función \code{mean} ocupa
+#'     su lugar
+#' @seealso num_entre
 #' @param x numeric: los datos
-#' @param ref numeric: la referencia o punto central; por omisión, el promedio
-#'     de los datos
+#' @param ref numeric o function: la referencia o punto central, o la
+#'     función que lo calcula
 #' @param frac numeric: valor mayor que cero; por omisión, 0.1
 #' @param inf numeric: límite inferior del rango
 #' @param sup numeric: límite superior del rango
+#' @param inclusive logical: intervalo cerrado?; FALSE por omisión.
+#' @param ... parámetros adicionales pasados a la función indicada en «ref»
 #' @return logical
 #' @export
 #' @examples
 #' x <- 1:5
-#' fuera_de_rango(x, inf = 2, sup = 4)
-#' fuera_de_rango(x, inf = 1, ref = 2)
-#' fuera_de_rango(x, ref = 2, frac = 0.9)
-#' fuera_de_rango(x, ref = median(x), frac = 1.5)
-#' fuera_de_rango(x, ref = mean(x, na.rm = TRUE),
-#'                sup = ref + 2 * sd(x, na.rm = TRUE)))
-en_intervalo <- function(x, ref, frac = 0.1, inf, sup, ...) {
+#' en_rango(x, inf = 2, sup = 4)
+#' en_rango(x, inf = 1, ref = 2)
+#' en_rango(x, ref = 2, frac = 0.9)
+#' en_rango(x, frac = 1.5)
+#' en_rango(x, ref = median(x), frac = 1.5)
+#' en_rango(x, ref = median, frac = 1.5, , , , na.rm = TRUE)
+#' en_rango(x, ref = mean(x, na.rm = TRUE),
+#'          inf = ref - 2 * sd(x, na.rm = TRUE),
+#'          sup = ref + 2 * sd(x, na.rm = TRUE))
+en_rango <- function(x, ref, frac = 0.1, inf, sup,
+                     inclusive = FALSE, ...) {
     stopifnot("arg. x inadmisible" = filled_num(x),
               "arg. frac inadmisible" = is_scalar(frac) && is.numeric(frac))
 
     if (missing(ref)) {
         ref <- mean
     }
+    if (missing(frac)) frac <- 0.1
 
     if (is.function(ref)) {
         cen <- ref(x, ...)
@@ -733,121 +609,17 @@ en_intervalo <- function(x, ref, frac = 0.1, inf, sup, ...) {
             cen <- ref
         } else {
             warning("\n ...ref NO ES admisible!!!", call. = FALSE)
-            out <- NA_integer_
+            return(NA_integer_)
         }
     }
 
-    if (missing(frac)) frac <- 0.1
-    if (missing(inf)) inf <- ref * (1.0 - frac)
-    if (missing(sup)) sup <- ref * (1.0 + frac)
+    if (missing(inf)) inf <- cen * (1.0 - frac)
+    if (missing(sup)) sup <- cen * (1.0 + frac)
 
     na <- is.na(x)
-    out <- num_entre(x, inf, sup)
+    out <- num_entre(x, inf, sup, inclusive)
     out[na] <- NA
     out
-}
-
-#' División
-#' @description Calcula el cociente y redondea.
-#' @details Los argumentos a los parámetros deben contener el mismo
-#'     número de elementos o, si difieren, uno (numerador o
-#'     denominador) debe ser un escalar. Donde el resultado sea
-#'     infinito, devuelve NA.
-#' @param x numeric: numerador
-#' @param y numeric: denominador
-#' @param dec integer o NA: número de decimales del resultado; si NA
-#'     (valor por omisión), no redondea
-#' @return double o NA
-#' @examples
-#' dividir(2, 3)
-#' dividir(1:3, 3)
-#' dividir(1:3, 3:1)
-#' \dontrun{
-#' dividir(1:3, 1:2) #-> error
-#' }
-#' @export
-#' @author eddy castellón
-dividir <- function(x = double(), y = double(), dec = NA_integer_) {
-    stopifnot(
-        "arg. no numerico" = filled_num(x) && filled_num(y),
-        "arg. difiere longitud" = length(x) == length(y) ||
-            (length(x) > 1 && length(y) == 1) ||
-            (length(x) == 1 && length(y) > 1),
-        "arg. dec no válido" = is_scalar(dec) && is.numeric(dec)
-    )
-
-    r <- x / y
-    r[is.infinite(r)] <- NA_real_
-
-    if (!is.na(dec)) {
-        r <- round(r, dec)
-    }
-
-    r
-}
-
-#' Porcentaje
-#' @description Porcentaje c.r.a base
-#' @param x numeric
-#' @param base numeric: base del porcentaje; por omisión, la suma de
-#'     los datos ignorando los NA
-#' @param dec integer: número de decimales; por omisión, cero
-#' @param x100 logical: resultado es dado multiplicado por 100 (TRUE)
-#'     o por 1 (FALSE). Por omisión, TRUE.
-#' @return numeric o NA
-#' @examples
-#' pct(2, 3)
-#' pct(1:3, 3)
-#' pct(1:3)
-#' pct(1:3, 1:3)
-#' \dontrun{
-#' pct(1:3, 3:2) #-> error
-#' }
-#' @export
-#' @author eddy castellón
-pct <- function(x = numeric(), base = numeric(), dec = 0L,
-                x100 = TRUE) {
-    stopifnot("arg. inadmisible" = filled_num(x) &&
-        is.numeric(base) && is.numeric(dec) && is.logical(x100))
-
-    if (is_vacuo(base)) {
-        base <- sum(x, na.rm = TRUE)
-    }
-
-    factor <- ifelse(x100, 100L, 1L)
-    if (all(base == 0 | is.na(base))) {
-        pp <- vector("numeric", length(x)) + NA_real_
-        warning("base es igual a cero o NA", call. = FALSE)
-    } else {
-        pp <- round(factor * dividir(x, base, NA), dec)
-    }
-    pp
-}
-
-#' Porcentaje-grupos
-#' @description Contribución al total del grupo
-#' @param x numeric: datos
-#' @param by numeric o character o factor: variable agrupamiento; por
-#'     omisión, sin agrupar
-#' @param dec integer: decimales; 0 por omisión
-#' @return list
-#' @examples
-#' pct_grupo(1:4, c("a", "a", "b", "b"))
-#' @export
-pct_grupo <- function(x = numeric(), by = numeric(), dec = 0L) {
-    stopifnot(
-        "arg. inadmisible" = filled_num(x),
-        "arg. inadmisible" = is_scalar0(by) ||
-            length(by) == length(x),
-        "arg. inadmisible" = filled_num(dec) &&
-            is_scalar(dec)
-    )
-
-    if (is_scalar0(by)) {
-        list(pct(x, dec = dec))
-    } else {
-        tapply(x, by, pct, dec = dec, simplify = FALSE)
-    }
 }
 
 #' buscar-remplazar
@@ -964,6 +736,47 @@ ordenar_conforme <- function(x, y) {
     x[m]
 }
 
+## === operaciones ===
+
+#' División
+#' @description Calcula el cociente y redondea.
+#' @details Los argumentos a los parámetros deben contener el mismo
+#'     número de elementos o, si difieren, uno (numerador o
+#'     denominador) debe ser un escalar. Donde el resultado sea
+#'     infinito, devuelve NA.
+#' @param x numeric: numerador
+#' @param y numeric: denominador
+#' @param dec integer o NA: número de decimales del resultado; si NA
+#'     (valor por omisión), no redondea
+#' @return double o NA
+#' @examples
+#' dividir(2, 3)
+#' dividir(1:3, 3)
+#' dividir(1:3, 3:1)
+#' \dontrun{
+#' dividir(1:3, 1:2) #-> error
+#' }
+#' @export
+#' @author eddy castellón
+dividir <- function(x = double(), y = double(), dec = NA_integer_) {
+    stopifnot(
+        "arg. no numerico" = filled_num(x) && filled_num(y),
+        "arg. difiere longitud" = length(x) == length(y) ||
+            (length(x) > 1 && length(y) == 1) ||
+            (length(x) == 1 && length(y) > 1),
+        "arg. dec no válido" = is_scalar(dec) && is.numeric(dec)
+    )
+
+    r <- x / y
+    r[is.infinite(r)] <- NA_real_
+
+    if (!is.na(dec)) {
+        r <- round(r, dec)
+    }
+
+    r
+}
+
 #' Redondear
 #' @description Redondear un vector de números de suerte que su suma
 #'     sea igual a un número dado
@@ -1039,6 +852,34 @@ redondear <- function(x, suma = 100, metodo = "webs",
     ni
 }
 
+## === estadísticas ===
+
+#' Suma
+#' @description Suma que excluye datos NA
+#' @return function
+#' @export
+suma <- purrr::partial(sum, na.rm = TRUE)
+
+#' Suma ponderada
+#' @description Suma pondera que excluye los datos y las ponderaciones NA
+#' @param x numeric: los datos
+#' @param w numeric: las ponderaciones
+#' @return numeric
+#' @export
+suma_pon <- function(x = numeric(), w = numeric()) {
+    stopifnot("arg.x inválido" = filled_num(x),
+              "arg.w inválido" = filled_num(w) &&
+                                 length(x) == length(w))
+    suma(x * w)
+}
+
+#' Media ponderada
+#' @description Media ponderada que excluye datos NA
+#' @return numeric
+#' @export
+media_pon <- purrr::partial(weighted.mean, na.rm = TRUE)
+
+
 #' Cuantiles
 #' @description Cuantiles
 #' @details Es una especialización de la función quantile. Las
@@ -1088,7 +929,81 @@ deciles <- purrr::partial(cuantiles, cuan = 0.1)
 #' @export
 quintiles <- purrr::partial(cuantiles, cuan = 0.2)
 
-## -- validación
+#' Porcentaje
+#' @description Porcentaje c.r.a base
+#' @param x numeric
+#' @param base numeric: base del porcentaje; por omisión, la suma de
+#'     los datos ignorando los NA
+#' @param dec integer: número de decimales; por omisión, cero
+#' @param x100 logical: resultado es dado multiplicado por 100 (TRUE)
+#'     o por 1 (FALSE). Por omisión, TRUE.
+#' @return numeric o NA
+#' @examples
+#' pct(2, 3)
+#' pct(1:3, 3)
+#' pct(1:3)
+#' pct(1:3, 1:3)
+#' \dontrun{
+#' pct(1:3, 3:2) #-> error
+#' }
+#' @export
+#' @author eddy castellón
+pct <- function(x = numeric(), base = numeric(), dec = 0L,
+                x100 = TRUE) {
+    stopifnot("arg. inadmisible" = filled_num(x) &&
+        is.numeric(base) && is.numeric(dec) && is.logical(x100))
+
+    if (is_vacuo(base)) {
+        base <- sum(x, na.rm = TRUE)
+    }
+
+    factor <- ifelse(x100, 100L, 1L)
+    if (all(base == 0 | is.na(base))) {
+        pp <- vector("numeric", length(x)) + NA_real_
+        warning("base es igual a cero o NA", call. = FALSE)
+    } else {
+        pp <- round(factor * dividir(x, base, NA), dec)
+    }
+    pp
+}
+
+#' Porcentaje-grupos
+#' @description Contribución al total del grupo
+#' @param x numeric: datos
+#' @param by numeric o character o factor: variable agrupamiento; por
+#'     omisión, sin agrupar
+#' @param dec integer: decimales; 0 por omisión
+#' @return list
+#' @examples
+#' pct_grupo(1:4, c("a", "a", "b", "b"))
+#' @export
+pct_grupo <- function(x = numeric(), by = numeric(), dec = 0L) {
+    stopifnot(
+        "arg. inadmisible" = filled_num(x),
+        "arg. inadmisible" = is_scalar0(by) ||
+            length(by) == length(x),
+        "arg. inadmisible" = filled_num(dec) &&
+            is_scalar(dec)
+    )
+
+    if (is_scalar0(by)) {
+        list(pct(x, dec = dec))
+    } else {
+        tapply(x, by, pct, dec = dec, simplify = FALSE)
+    }
+}
+
+## === validación ===
+
+#' Par
+#' @description Es número par?
+#' @param x numeric
+#' @return logical
+#' @export
+es_par <- function(x) {
+    stopifnot("arg.x no es numérico" = filled_num(x))
+    x %% 2 == 0
+}
 
 #' Positivo
 #' @description Es mayor que cero
@@ -1120,4 +1035,3 @@ ypos_si_xpos <- function(x, y) {
 ypos_ssi_xpos <- function(x, y) {
     ypos_si_xpos(x, y) & ypos_si_xpos(y, x)
 }
-

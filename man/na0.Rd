@@ -10,7 +10,7 @@ na0(x)
 \item{x}{numeric}
 }
 \value{
-numeric
+numeric o NULL
 }
 \description{
 Convierte a 0 los elementos NA de un vector de modo

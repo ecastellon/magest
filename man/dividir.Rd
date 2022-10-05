@@ -4,7 +4,7 @@
 \alias{dividir}
 \title{División}
 \usage{
-dividir(x = double(), y = double(), dec = NA)
+dividir(x = double(), y = double(), dec = NA_integer_)
 }
 \arguments{
 \item{x}{numeric: numerador}

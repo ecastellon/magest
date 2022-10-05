@@ -1,0 +1,3 @@
+^tests/testthat/*.*
+^LICENSE\.md$
+ini.r
