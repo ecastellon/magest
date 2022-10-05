@@ -7,7 +7,7 @@
 suma_pon(x = numeric(), w = numeric())
 }
 \arguments{
-\item{x}{numeric: los datos}
+\item{x}{numeric, logical: los datos}
 
 \item{w}{numeric: las ponderaciones}
 }

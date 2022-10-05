@@ -862,12 +862,12 @@ suma <- purrr::partial(sum, na.rm = TRUE)
 
 #' Suma ponderada
 #' @description Suma pondera que excluye los datos y las ponderaciones NA
-#' @param x numeric: los datos
+#' @param x numeric, logical: los datos
 #' @param w numeric: las ponderaciones
 #' @return numeric
 #' @export
 suma_pon <- function(x = numeric(), w = numeric()) {
-    stopifnot("arg.x inválido" = filled_num(x),
+    stopifnot("arg.x inválido" = filled_num(x) || filled_log(x),
               "arg.w inválido" = filled_num(w) &&
                                  length(x) == length(w))
     suma(x * w)
@@ -962,7 +962,7 @@ pct <- function(x = numeric(), base = numeric(), dec = 0L,
         pp <- vector("numeric", length(x)) + NA_real_
         warning("base es igual a cero o NA", call. = FALSE)
     } else {
-        pp <- round(factor * dividir(x, base, NA), dec)
+        pp <- round(factor * dividir(x, base), dec)
     }
     pp
 }
