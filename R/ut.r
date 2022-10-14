@@ -464,16 +464,20 @@ ningun_na <- function(x) !anyNA(x)
 
 #' NA a cero
 #' @description Convierte a 0 los elementos NA de un vector de modo
-#'     numérico
+#'     numérico. Devuelve tal cual uno que no lo es.
 #' @param x numeric
-#' @return numeric o NULL
+#' @return numeric
 #' @examples
 #' na0(c(1:3, NA_integer_))
 #' @export
 na0 <- function(x) {
-    stopifnot("arg. x inadmisible" = filled_num(x))
-
-    x[is.na(x)] <- ifelse(typeof(x) == "integer", 0L, 0.0)
+    
+    if (filled_num(x)) {
+        x[is.na(x)] <- ifelse(typeof(x) == "integer", 0L, 0.0)
+    } else {
+        warning("... arg. sin datos o no es NUMERICO",
+                call. = FALSE)
+    }
 
     return(x)
 }
