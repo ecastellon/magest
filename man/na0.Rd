@@ -10,11 +10,11 @@ na0(x)
 \item{x}{numeric}
 }
 \value{
-numeric o NULL
+numeric
 }
 \description{
 Convierte a 0 los elementos NA de un vector de modo
-numérico
+numérico. Devuelve tal cual uno que no lo es.
 }
 \examples{
 na0(c(1:3, NA_integer_))
