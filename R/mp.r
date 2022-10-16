@@ -727,10 +727,10 @@ xsql <- function(x = list(), whr = character(), ord = character(),
     ss
 }
 
-#' SQL expresión
+#' SQL expresión simple
 #' @description Expresión SQL sencilla
 #' @param x character: nombre de la tabla
-#' @param cm character: nombre de los campos. Si los elementos con
+#' @param cam character: nombre de los campos. Si los elementos con
 #'     nombre, estos son puestos en la cláusula «as». Por omisión es
 #'     "*".
 #' @return character
@@ -740,18 +740,18 @@ xsql <- function(x = list(), whr = character(), ord = character(),
 #' #-> "select a as x,b as y from a"
 #' xsql_s("a")
 #' #-> "select * from a"
-xsql_s <- function(x = character(), cm = "*") {
+xsql_s <- function(x = character(), cam = "*") {
     stopifnot("arg. inadmisibles" = is_scalar_name(x) &&
-                  filled_char(cm))
+                  filled_char(cam))
 
-    if (!is_scalar(cm)) {
-        nm <- names(cm)
+    if (!is_scalar(cam)) {
+        nm <- names(cam)
         if (filled(nm)) {
-            cm <- paste(cm, nm, sep = " as ")
+            cam <- paste(cam, nm, sep = " as ")
         }
-        cm <- paste(cm, collapse = ",")
+        cam <- paste(cam, collapse = ",")
     }
-    paste("select", cm, "from", x)
+    paste("select", cam, "from", x)
 }
 
 #' SQL union
@@ -884,7 +884,7 @@ xsql_u <- function(x = character(), idc = seq_along(x),
 #'     cláusula «union all») o no permitir duplicados (FALSE, cláusula
 #'     «union»).
 #' @return character
-#' @seealso xsql_u
+#' @seealso xsql_u, normalizar_data
 #' @examples
 #' xsql_t("segene", paste0("c", 121:126), c("cult", "semb", "per"))
 #' @export
@@ -917,6 +917,43 @@ xsql_t <- function(x = character(), cam = character(),
 
     xsql_u(mk, idc, cid, all)
 }
+
+#' SQL expresión con o sin union
+#' @description Llama «xsql_s» o «xsql_t» para construir la expresión
+#'   SQL. Asume que el nombre del campo que identifica los registros
+#'   es "quest".
+#' @seealso \code{xsql_t}, \code{xsql_s}
+#' @param x list: con los nombres de los parámetros y los argumentos
+#'   que serán pasados a la correspondiente función. El primer
+#'   elmento, con nombre «x», indica cuál de las funciones: 1 para
+#'   llamar «xsql_s», 2 para llamar «xsql_t».
+#' @param tabla character: nombre de la tabla de donde se extraerán
+#'   los datos
+#' @return character: expresión SQL
+#' @examples
+#' xsql_st(list(x = 1, cam = c("c5000", "copiade")),
+#'         tabla = "seguimjul2022")
+#' xsql_st(list(x = 2, cam = c("c001", "c002", "c003", "c004"),
+#'         nvb = c("cul", "mz")), tabla = "seguimjul2022")
+#' xsql_st(list(x = 2, cam = c("c001", "c002", "c003", "c004"),
+#'         nvb = c("cul", "mz"), idc = c("mai", "fri"),
+#'         cid = "cultivo"), tabla = "seguimjul2022")
+#' @export 
+xsql_st <- function(x, tabla) {
+    tip <- x[[1]]
+    stopifnot("arg. no válidos" = is.character(tabla) &&
+                  nzchar(tabla) && (tip == 1 | tip == 2))
+    x[[1]] <- tabla
+    if (tip == 1) {
+        x[[2]] <- append(x[[2]], "quest", 0)
+        xs <- do.call("xsql_s", x)
+    } else {
+        xs <- do.call("xsql_t", x)
+    }
+    xs
+}
+
+## === obtener datos de la base de datos ===
 
 #' Datos-encuesta
 #' @description Devuelve los datos que produce una consulta SQL, y de

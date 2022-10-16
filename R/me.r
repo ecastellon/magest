@@ -407,18 +407,19 @@ df_fxp <- function(dfq, dfp, qres, ccon = "c5000", cues = "quest",
 #' Estratos-puntos
 #' @description Regresa el data frame con el número actualizado de
 #'     puntos en los estratos
-#' @details El data.frame de los estratos tiene columnas «dpto»,
-#'     «estrato» y «puntos», que traen el número de puntos asignados a
-#'     los estratos de cada departamento. El data.frame de los puntos
-#'     tiene columnas «dpt» y «estrato» que indican el departamento y
-#'     estrato al que está asignado cada punto de la muestra. La
-#'     función modifica la columna «puntos» del data.frame de los
-#'     estratos, con el número de puntos por estrato y departamento
-#'     calculado con los datos en el data.frame de puntos de la
-#'     muestra.
+#' @details El data.frame de los estratos (pmt. "es") tiene columnas
+#'     «dpto», «estrato» y «puntos», para guardar el número de puntos
+#'     asignados a los estratos de cada departamento. El data.frame de
+#'     los puntos (pmt. "pun") tiene columnas «dpt» y «estrato», con
+#'     los códigos del departamento y del estrato al que está asignado
+#'     cada punto de la muestra. La función calcula el número de
+#'     puntos de la muestra que hay en cada estrato de cada
+#'     departamento, y lo almacena en la columna «puntos» del
+#'     data.frame de los estratos.
 #' @param es data frame con los datos de los estratos
 #' @param pun data.frame con los puntos que conforman la muestra
 #' @return data.frame
+#' @export
 puntos_estratos <- function(es, pun) {
     ne <- group_by(pun, dpt, estrato) %>%
         summarise(n = n()) %>%
@@ -428,6 +429,45 @@ puntos_estratos <- function(es, pun) {
                 interaction(ne$dpt, ne$estrato))
     es["puntos"] <- ne$n[mm]
     invisible(es)
+}
+
+#' Ubicar-punto
+#' @description Devuelve los códigos de departamento, municipio y
+#'     estrato donde está asignado el punto
+#' @details Hace una búsqueda en la tabla de puntos pasada en el
+#'     parámetro tblpun.
+#' @param punto numeric: el nombre del punto
+#' @param tblpun data.frame: columnas con nombre del punto y códigos
+#'     de departamento, municipio y estrato
+#' @param colpun character: nombre de la columna con «id» del punto
+#' @param coldpt character: nombre de la columna con «id» del
+#'     departamento
+#' @param colmun character: nombre de la columna con «id» del
+#'     municipio
+#' @param colest character: nombre de la columna «id» del estrato
+#' @return data.frame con punto, departamento, municipio, estrato
+#' @export
+ubicacion_punto <- function(punto, tblpun, colpun = "quest",
+                         coldpt = "dpt", colmun = "mun",
+                         colest = "estrato") {
+    stopifnot("arg.punto" = filled_num(punto),
+              "arg.col***" = filled_char(colpun) &&
+                  filled_char(coldpt) &&
+                  filled_char(colmun) && filled_char(colest),
+              "arg.tblpunto" = is.data.frame(tblpun) &&
+                  nrow(tblpun) > 0 &&
+                  all(hasName(tblpun,
+                              c(colpun, coldpt, colmun, colest))))
+
+    mm <- match(punto, tblpun[[colpun]])
+    nna <- no_na(mm)
+    if ( any(nna) ) {
+        out <- tblpun[mm[nna], c(colpun, coldpt, colmun, colest),
+                      drop = FALSE]
+    } else {
+        out <- NULL
+    }
+    out
 }
 
 ## -- estimados --
@@ -546,6 +586,35 @@ wg_calibra <- function(dfo, dfg, cob = 1:3, cgr = 1:2, dec = 6L) {
     unsplit(wc, go)
 }
 
+#' varianza-pps-reemplazo
+#' @description Varianza pps con remplazo
+#' @param x numeric: datos
+#' @param w numeric: ponderación
+#' @param sin0 logical: ignorar los datos igual a cero?
+#' @return NA o numeric
+#' @export
+#' @examples
+#' varianza_pps_cr(c(1, 1, 0, 1 ), c(1, 1, 1, 1 ) )
+varianza_pps_cr <- function(x, w = numeric( ), sin0 = TRUE) {
+
+    if (!length(w)) {
+        w <- numeric(length(x)) + 1.0
+    }
+    
+    if (sin0) {
+        w <- w[x != 0]
+        x <- x[x != 0]
+    }
+
+    n <- length(x)
+    if(!n) {
+        vz <- NA_real_
+    } else {
+        vz <- var(x * w, na.rm = TRUE) * n
+    }
+    vz
+}
+
 ## -- outliers --
 
 #' outlier-estimación
@@ -609,14 +678,15 @@ out_pct <- function(x, id, by = integer(), cota = 10L,
     invisible(ae)
 }
 
-#' outlier
+#' Remplazo de outlier
 #' @description Remplaza outlier
 #' @details Sustituye los datos que son mayores (menores) que
 #'     arg. "cota", por los producidos por arg. "fun". La alternativa
-#'     mayor (menor) que arg. "cota" la determina el arg. "mayor". La
-#'     función no verifica los argumentos pasados a la función en
-#'     pmt. "..."; cualquier error lo identifica la función en
-#'     cuestión, y en tal caso, los datos no son modificados.
+#'     mayor (menor) que el arg. "cota", la determina el
+#'     arg. "mayor". La función no verifica los argumentos pasados a
+#'     la función en pmt. "..."; cualquier error lo identifica la
+#'     función en cuestión, y en tal caso, los datos no son
+#'     modificados.
 #' @param x numeric: los datos
 #' @param cota numeric escalar: cota
 #' @param fun function: función de los datos (x) que devuelve
@@ -705,7 +775,7 @@ v_auto <- function(qst, dup) {
     }
 }
 
-#' copiar de origen a copia
+#' copiar vector de origen a copia
 #' @description Copia los datos de una variable, de los cuestionarios
 #'     «origen» a los cuestionarios «copia»
 #' @param x vector atómico: datos de la variable
@@ -743,18 +813,20 @@ duplicar_v <- function(x, qst, dup) {
     invisible(x)
 }
 
-#' Copiar de origen a copia
-#' @description Copiar datos de las boletas origen a las boletas copias
-#' @details Aplica la función \code{duplicar_v} a todas las columnas, excepto
-#'    a la que identifica los cuestionarios y la que lleva los números de
-#'    boleta origen (si es que está en el data.frame). El parámetro «origen»
-#'    es para pasar el nombre de la variable con los números de boleta origen
-#'    y evitar que se modifique. Es importante tener cuidado con el nombre
-#'    pasado como argumento.
+#' Copiar vectores de origen a copia
+#' @description Copiar datos de las boletas origen a las boletas
+#'     copias
+#' @details Aplica la función \code{duplicar_v} a todas las columnas,
+#'     excepto a la que identifica los cuestionarios y la que lleva
+#'     los números de boleta origen (si es que está en el
+#'     data.frame). El parámetro «origen» es para pasar el nombre de
+#'     la variable con los números de boleta origen y evitar que se
+#'     modifique. Es importante tener cuidado con el nombre pasado
+#'     como argumento.
 #' @param qst numeric: la columna que identifica los registros; por
-#'    defecto, 1
-#' @param origen character: nombre de la variable con número de boleta origen;
-#'    por defecto, «copiade».
+#'     defecto, 1
+#' @param origen character: nombre de la variable con número de boleta
+#'     origen; por defecto, «copiade».
 #' @param dup numeric: vector con los id_reg origen de duplicados
 #' @seealso duplicar_v
 #' @export

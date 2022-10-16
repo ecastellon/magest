@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-## --- utilidad general ---
+## === utilidad general ===
 
 ## --- data.frame ---
 
