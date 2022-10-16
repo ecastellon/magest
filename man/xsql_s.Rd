@@ -2,14 +2,14 @@
 % Please edit documentation in R/mp.r
 \name{xsql_s}
 \alias{xsql_s}
-\title{SQL expresión}
+\title{SQL expresión simple}
 \usage{
-xsql_s(x = character(), cm = "*")
+xsql_s(x = character(), cam = "*")
 }
 \arguments{
 \item{x}{character: nombre de la tabla}
 
-\item{cm}{character: nombre de los campos. Si los elementos con
+\item{cam}{character: nombre de los campos. Si los elementos con
 nombre, estos son puestos en la cláusula «as». Por omisión es
 "*".}
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/me.r
 \name{out_remplazo}
 \alias{out_remplazo}
-\title{outlier}
+\title{Remplazo de outlier}
 \usage{
 out_remplazo(x, cota = 0, fun, mayor = TRUE, msj = FALSE, ...)
 }
@@ -29,10 +29,11 @@ Remplaza outlier
 \details{
 Sustituye los datos que son mayores (menores) que
 arg. "cota", por los producidos por arg. "fun". La alternativa
-mayor (menor) que arg. "cota" la determina el arg. "mayor". La
-función no verifica los argumentos pasados a la función en
-pmt. "..."; cualquier error lo identifica la función en
-cuestión, y en tal caso, los datos no son modificados.
+mayor (menor) que el arg. "cota", la determina el
+arg. "mayor". La función no verifica los argumentos pasados a
+la función en pmt. "..."; cualquier error lo identifica la
+función en cuestión, y en tal caso, los datos no son
+modificados.
 }
 \examples{
 (out_remplazo(c(200, 1:5, 1000), 100, mean, trim = 0.1))

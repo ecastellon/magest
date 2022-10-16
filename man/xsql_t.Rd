@@ -100,5 +100,5 @@ los datos.
 xsql_t("segene", paste0("c", 121:126), c("cult", "semb", "per"))
 }
 \seealso{
-xsql_u
+xsql_u, normalizar_data
 }
