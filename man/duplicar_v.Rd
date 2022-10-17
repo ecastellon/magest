@@ -2,7 +2,7 @@
 % Please edit documentation in R/me.r
 \name{duplicar_v}
 \alias{duplicar_v}
-\title{copiar de origen a copia}
+\title{copiar vector de origen a copia}
 \usage{
 duplicar_v(x, qst, dup)
 }

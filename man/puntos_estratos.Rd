@@ -19,13 +19,13 @@ Regresa el data frame con el número actualizado de
 puntos en los estratos
 }
 \details{
-El data.frame de los estratos tiene columnas «dpto»,
-«estrato» y «puntos», que traen el número de puntos asignados a
-los estratos de cada departamento. El data.frame de los puntos
-tiene columnas «dpt» y «estrato» que indican el departamento y
-estrato al que está asignado cada punto de la muestra. La
-función modifica la columna «puntos» del data.frame de los
-estratos, con el número de puntos por estrato y departamento
-calculado con los datos en el data.frame de puntos de la
-muestra.
+El data.frame de los estratos (pmt. "es") tiene columnas
+«dpto», «estrato» y «puntos», para guardar el número de puntos
+asignados a los estratos de cada departamento. El data.frame de
+los puntos (pmt. "pun") tiene columnas «dpt» y «estrato», con
+los códigos del departamento y del estrato al que está asignado
+cada punto de la muestra. La función calcula el número de
+puntos de la muestra que hay en cada estrato de cada
+departamento, y lo almacena en la columna «puntos» del
+data.frame de los estratos.
 }

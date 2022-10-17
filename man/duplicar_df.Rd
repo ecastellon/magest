@@ -2,7 +2,7 @@
 % Please edit documentation in R/me.r
 \name{duplicar_df}
 \alias{duplicar_df}
-\title{Copiar de origen a copia}
+\title{Copiar vectores de origen a copia}
 \usage{
 duplicar_df(df, qst = 1L, origen = "copiade", dup = numeric())
 }
@@ -10,21 +10,23 @@ duplicar_df(df, qst = 1L, origen = "copiade", dup = numeric())
 \item{qst}{numeric: la columna que identifica los registros; por
 defecto, 1}
 
-\item{origen}{character: nombre de la variable con número de boleta origen;
-por defecto, «copiade».}
+\item{origen}{character: nombre de la variable con número de boleta
+origen; por defecto, «copiade».}
 
 \item{dup}{numeric: vector con los id_reg origen de duplicados}
 }
 \description{
-Copiar datos de las boletas origen a las boletas copias
+Copiar datos de las boletas origen a las boletas
+copias
 }
 \details{
-Aplica la función \code{duplicar_v} a todas las columnas, excepto
-a la que identifica los cuestionarios y la que lleva los números de
-boleta origen (si es que está en el data.frame). El parámetro «origen»
-es para pasar el nombre de la variable con los números de boleta origen
-y evitar que se modifique. Es importante tener cuidado con el nombre
-pasado como argumento.
+Aplica la función \code{duplicar_v} a todas las columnas,
+excepto a la que identifica los cuestionarios y la que lleva
+los números de boleta origen (si es que está en el
+data.frame). El parámetro «origen» es para pasar el nombre de
+la variable con los números de boleta origen y evitar que se
+modifique. Es importante tener cuidado con el nombre pasado
+como argumento.
 }
 \examples{
    x <- data.frame(q = 1:3, a = c(10, 20, 30), b = 4:6)

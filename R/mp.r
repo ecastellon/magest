@@ -44,7 +44,7 @@ is_open <- function(ob) UseMethod("is_open")
 #'     de conexión ('connection string') que habilita 'conectarse' o
 #'     'abrir' la base de datos para mandar ejecutar instrucciones
 #'     de consulta.
-#'     
+#'
 #'     Para cada servidor de base de datos (SQL server, Excel, Access,
 #'     MySQL, SQLite, etc.) hay una 'connection string' específica
 #'     según la aplicación que sirve de intermediario con el servidor.
@@ -201,7 +201,7 @@ db_sql <- function(driver = "{SQL Server}", server = character(),
               "arg. data. inadmisible" = is.character(database),
               "arg. uid inadmisible" = is.character(uid),
               "arg. pwd inadmisible" = is.character(pwd))
-    
+
     if (is_vacuo(uid)) {
         uid <- Sys.getenv("SQLUID")
     }
@@ -211,7 +211,7 @@ db_sql <- function(driver = "{SQL Server}", server = character(),
     if (is_vacuo(server)) {
         server <- Sys.getenv("SQLSERVERMAGIP")
     }
-        
+
     ob <- odb(driver = driver, server = server, database = database,
               uid = uid, pwd = pwd)
     ## validar
@@ -235,7 +235,7 @@ db_sql <- function(driver = "{SQL Server}", server = character(),
 db_xcl <- function(file = character(), version7 = TRUE, ronly = TRUE) {
 
     stopifnot("arg. file inadmisible" = filled_char(file))
-    
+
     ff <- tryCatch(normalizePath(file, mustWork = TRUE),
                    error = function(e){
                        stop("\n...archivo no existe!!")})
@@ -486,11 +486,11 @@ db_qry.RODBC <- function(x, xs = character(), strfac = FALSE,
 db_fetch.RODBC <- function(x, tb = character(), strfac = FALSE,
                            max = 0L, ...) {
     stopifnot("arg. tb inadmisible" = is_scalar_name(tb))
-    
+
     ww <- tryCatch(RODBC::sqlFetch(x, tb, stringsAsFactors = strfac,
                             max = max, ...),
                    error = function(e) e)
-    
+
     if (!is.data.frame(ww)){
         message("\n!!!...error durante lectura")
     }
@@ -521,7 +521,7 @@ db_save.RODBC <- function(x, df, tb = character(),
                           rn = FALSE, ...) {
     stopifnot("arg. df inadmisible" = inherits(df, "data.frame"),
               "arg. tb inadmisible" = is_scalar_name(tb))
-    
+
     ww <- tryCatch(RODBC::sqlSave(x, df, tablename = tb,
                                   rownames = rn, ...),
                    error = function(e) e)
@@ -696,7 +696,7 @@ xsql <- function(x = list(), whr = character(), ord = character(),
             cm <- paste(nx[1], cm, sep = ".")
             tb <- paste(tb, nx[1])
         }
- 
+
         x[[1]] <- tb
         x[[2]] <- paste(cm, collapse = ",")
         x
@@ -709,7 +709,7 @@ xsql <- function(x = list(), whr = character(), ord = character(),
     x <- lapply(x, tbc) %>%
         Reduce(rdu, ., init = list("", "")) %>%
         substring(2)
- 
+
     ss <- paste("select", x[2], "from", x[1])
 
     ## condiciones
@@ -723,14 +723,14 @@ xsql <- function(x = list(), whr = character(), ord = character(),
 
     if(filled(ord) && nzchar(ord)) ss <- paste(ss, "order by", ord)
     if(filled(qby) && nzchar(gby)) ss <- paste(ss, "group by", gby)
- 
+
     ss
 }
 
-#' SQL expresión
+#' SQL expresión simple
 #' @description Expresión SQL sencilla
 #' @param x character: nombre de la tabla
-#' @param cm character: nombre de los campos. Si los elementos con
+#' @param cam character: nombre de los campos. Si los elementos con
 #'     nombre, estos son puestos en la cláusula «as». Por omisión es
 #'     "*".
 #' @return character
@@ -740,18 +740,18 @@ xsql <- function(x = list(), whr = character(), ord = character(),
 #' #-> "select a as x,b as y from a"
 #' xsql_s("a")
 #' #-> "select * from a"
-xsql_s <- function(x = character(), cm = "*") {
+xsql_s <- function(x = character(), cam = "*") {
     stopifnot("arg. inadmisibles" = is_scalar_name(x) &&
-                  filled_char(cm))
+                  filled_char(cam))
 
-    if (!is_scalar(cm)) {
-        nm <- names(cm)
+    if (!is_scalar(cam)) {
+        nm <- names(cam)
         if (filled(nm)) {
-            cm <- paste(cm, nm, sep = " as ")
+            cam <- paste(cam, nm, sep = " as ")
         }
-        cm <- paste(cm, collapse = ",")
+        cam <- paste(cam, collapse = ",")
     }
-    paste("select", cm, "from", x)
+    paste("select", cam, "from", x)
 }
 
 #' SQL union
@@ -825,19 +825,19 @@ xsql_u <- function(x = character(), idc = seq_along(x),
 #'     un campo de la tabla), aunque para la estimación y el análisis,
 #'     los datos se arreglan en un cuadro con la siguiente estructura
 #'     (c??? es el nombre del campo)
-#' 
+#'
 #'     cxx1 cxx2 cxx3 cxx4
-#' 
+#'
 #'     cxx5 cxx6 cxx7 cxx8
-#' 
+#'
 #'     .... .... .... ....
-#' 
+#'
 #'     o
-#' 
+#'
 #'     cxx1 cxx3 cxx5 cxx7
-#' 
+#'
 #'     cxx2 cxx4 cxx6 cxx8
-#' 
+#'
 #'     donde las columnas del cuadro son las variables (p.ej. cultivo,
 #'     manzanas sembradas, etc.) y las filas corresponden a un
 #'     registro o cuestionario.
@@ -884,7 +884,7 @@ xsql_u <- function(x = character(), idc = seq_along(x),
 #'     cláusula «union all») o no permitir duplicados (FALSE, cláusula
 #'     «union»).
 #' @return character
-#' @seealso xsql_u
+#' @seealso xsql_u, normalizar_data
 #' @examples
 #' xsql_t("segene", paste0("c", 121:126), c("cult", "semb", "per"))
 #' @export
@@ -903,12 +903,12 @@ xsql_t <- function(x = character(), cam = character(),
              length(cam) == length(nvb) * length(idc))
         "arg. idr inadmisible" = is_scalar_name(idr)
     })
- 
+
     cn <- c(idr, nvb)
     mk <- matrix(cam, ncol = length(nvb), byrow = xfi) %>%
         cbind(idr, .) %>%
         magrittr::set_names(cn) %>%
-        apply(1, function(z) xsql_s(x, cm = setNames(z, cn)))
+        apply(1, function(z) xsql_s(x, cam = setNames(z, cn)))
 
 
     #ss <- split(mk, seq_len(nrow(mk))) %>%
@@ -917,6 +917,43 @@ xsql_t <- function(x = character(), cam = character(),
 
     xsql_u(mk, idc, cid, all)
 }
+
+#' SQL expresión con o sin union
+#' @description Llama «xsql_s» o «xsql_t» para construir la expresión
+#'   SQL. Asume que el nombre del campo que identifica los registros
+#'   es "quest".
+#' @seealso \code{xsql_t}, \code{xsql_s}
+#' @param x list: con los nombres de los parámetros y los argumentos
+#'   que serán pasados a la correspondiente función. El primer
+#'   elmento, con nombre «x», indica cuál de las funciones: 1 para
+#'   llamar «xsql_s», 2 para llamar «xsql_t».
+#' @param tabla character: nombre de la tabla de donde se extraerán
+#'   los datos
+#' @return character: expresión SQL
+#' @examples
+#' xsql_st(list(x = 1, cam = c("c5000", "copiade")),
+#'         tabla = "seguimjul2022")
+#' xsql_st(list(x = 2, cam = c("c001", "c002", "c003", "c004"),
+#'         nvb = c("cul", "mz")), tabla = "seguimjul2022")
+#' xsql_st(list(x = 2, cam = c("c001", "c002", "c003", "c004"),
+#'         nvb = c("cul", "mz"), idc = c("mai", "fri"),
+#'         cid = "cultivo"), tabla = "seguimjul2022")
+#' @export
+xsql_st <- function(x, tabla) {
+    tip <- x[[1]]
+    stopifnot("arg. no válidos" = is.character(tabla) &&
+                  nzchar(tabla) && (tip == 1 | tip == 2))
+    x[[1]] <- tabla
+    if (tip == 1) {
+        x[[2]] <- append(x[[2]], "quest", 0)
+        xs <- do.call("xsql_s", x)
+    } else {
+        xs <- do.call("xsql_t", x)
+    }
+    xs
+}
+
+## === obtener datos de la base de datos ===
 
 #' Datos-encuesta
 #' @description Devuelve los datos que produce una consulta SQL, y de
@@ -950,7 +987,7 @@ get_data.odb <- function(x, qstr = character(), meta = character(),
     if (ok <- is_rodbc(kk)) {
         ww <- db_qry(kk, qstr, max = max)
         db_close(kk)
- 
+
         if (ok <- is.data.frame(ww)) {
             if (na_0) {
                 ww[] <- lapply(ww, na0)
@@ -964,7 +1001,7 @@ get_data.odb <- function(x, qstr = character(), meta = character(),
         }
     }
     if (!ok) ww <- NULL
- 
+
     invisible(ww)
 }
 
@@ -1029,7 +1066,7 @@ par_conn_mysql <- function(...) {
     if (!all(sapply(x, nzchar))) {
         warning("... hay parámetros no definidos !!!", call. = FALSE)
     }
-    
+
     x
 }
 
@@ -1048,9 +1085,9 @@ par_conn_mysql <- function(...) {
 #' RMariaDB::dbListFields(cn, "hato_dict")
 #' RMariaDB::dbDisconnect(cn)
 conn_mysql  <- function(...) {
-    
+
     x <- par_conn_mysql(...)
-    
+
     con <- RMariaDB::dbConnect(RMariaDB::MariaDB(),
                                host = x$host, dbname = x$dbname,
                                user = x$user, password = x$pwd)
@@ -1058,7 +1095,7 @@ conn_mysql  <- function(...) {
         message("\n... ERROR de conexión !!!")
         con <- NULL
     }
-    
+
     invisible(con)
 }
 
@@ -1192,7 +1229,7 @@ longitud_variables <- function(x = character(), dic) {
     stopifnot("arg. x inadmisible" = is.character(x) && length(x))
 
     x <- ordenar_conforme(x, dic$variable)
-    
+
     m <- match(x, dic$variable) %>% Filter(Negate(is.na), .)
     if (length(m) < length(x)) {
         warning("\n... hay variables que no están en diccionario !!!")
@@ -1255,7 +1292,7 @@ exportar_datos_cs <- function(tab, dic,
                                               fileext = ".txt")) {
     stopifnot("archivo ya existe" = !file.exists(artx),
               "no puedo crear archivo" = ok_fname(artx))
-    
+
     cn <- conn_mysql()
 
     del <- leer_campo_cspro(tab, "deleted", conn = cn) %>%
@@ -1319,7 +1356,7 @@ leer_datos_fwf <- function(variables = character(),
               colClasses = tipo_col,
               comment.char = "", strip.white = TRUE,
               na.strings = "", stringsAsFactors = FALSE)
-    
+
     invisible(w)
 }
 
@@ -1407,7 +1444,7 @@ leer_campo_cspro <- function(tab_dict = character(),
     } else {
         conn <- conn_mysql(...)
     }
-        
+
     if (is.null(conn)) {
         return(conn)
     }
@@ -1488,11 +1525,11 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
     ## if ( any(d) ) {
     ##     w <- w[!d]
     ## }
-    
+
     ## preproceso registros caracteres incompletos
     loncam <- longitud_variables(columnas, dat_dict)
     nc <- sum(abs(loncam))
-    
+
     nn <- vapply(w, nchar, 1L, USE.NAMES = FALSE)
     nr <- (nc - nn) %>%
         is_greater_than(0) %>%

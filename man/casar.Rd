@@ -25,14 +25,16 @@ Match de dos o más vectores
 Para encontrar el "match" de una pareja de vectores con
 otra pareja, lo común es primero construir vectores adicionales
 con la función "interaction" y luego hacer el "match" con los
-vectores resultantes.\preformatted{Esta función automatiza ese proceso. Recibe un número par de
+vectores resultantes.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{Esta función automatiza ese proceso. Recibe un número par de
 vectores y construye la interacción de una mitad y de la otra
 mitad y luego hace el "match". Además, de manera opcional
 informa cuántos elementos de la primera mitad de vectores no
 existen en la otra mitad (no hicieron "match"), y también, de
 manera opcional, devuelve en el atributo "sinpar" el
 correspondiente vector de índices de los que no tienen pareja.
-}
+}\if{html}{\out{</div>}}
 }
 \examples{
 casar(x, y, msg = FALSE)

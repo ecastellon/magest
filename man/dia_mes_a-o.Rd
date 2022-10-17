@@ -4,7 +4,7 @@
 \alias{dia_mes_año}
 \title{Día}
 \usage{
-dia_mes_a昼㸱o()
+dia_mes_año()
 }
 \value{
 character

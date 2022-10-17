@@ -42,7 +42,9 @@ con la superficie. Si no están en ese orden, se utiliza el
 parámetro "cob" para indicar su posición. Por ejemplo, cob =
 c(2, 5, 1) indicaría que el código de departamento está en la
 segunda columna, la del estrato en la quinta, y la superficie
-en la primera.\preformatted{El data.frame vinculado al parámetro "dfe" trae los datos
+en la primera.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{El data.frame vinculado al parámetro "dfe" trae los datos
 de los estratos y el tamaño de la muestra asignada a cada
 uno. La posición de las columnas en el orden siguiente: la
 primera con la identificación del departamento (integer),
@@ -60,7 +62,7 @@ alternativa es considerar las que faltan como unidades
 "no contactadas", y ponderar el factor por no respuesta. Pero
 de nuevo, el factor que resulte sería válido sólo si los
 "no contactos" estuvieran distribuidos aleatoriamente.
-}
+}\if{html}{\out{</div>}}
 }
 \examples{
 \dontrun{w_pr(dfcues, dfestratos)}
