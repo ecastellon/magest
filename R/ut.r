@@ -883,6 +883,30 @@ suma_pon <- function(x = numeric(), w = numeric()) {
 #' @export
 media_pon <- purrr::partial(weighted.mean, na.rm = TRUE)
 
+#' Intervalo robusto
+#' @description Calcula los límites de un intervalo con estadísticas
+#'     robustas de localización y dispersión
+#' @details Utiliza la función robustbase::covMcd para obtener los
+#'     estimados de localización y dispersión. Calcula la semiamplitud
+#'     del intervalo multiplicando el estimado de dispersión por el
+#'     factor «pctil»», y los límites superior e inferior, sumando
+#'     (restando) el estimado de localización.
+#' @seealso en_rango
+#' @param x numeric: los datos
+#' @param pctil numeric escalar: factor para determinar los
+#'     límites. Por omisión, 2.0
+#' @return lista con los estimados de localización "prom", dispersión
+#'     ("desv") y los límites inferior y superior ("li", "ls")
+#' @export
+ic_robusto <- function(x, pctil = 2) {
+    u <- robustbase::covMcd(x)
+    de <- sqrt(u$cov[1, 1])
+    lic <- de * pctil
+    list(prom = u$center,
+         desv = de,
+         li = u$center - lic,
+         ls = u$center + lic)
+}
 
 #' Cuantiles
 #' @description Cuantiles
