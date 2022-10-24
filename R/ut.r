@@ -23,7 +23,7 @@ quitar_0 <- function(x, excepto) UseMethod("quitar_0")
 #' (quitar_0(aa, excepto = "x"))
 #' @export
 #' @author eddy castellón
-quitar_0.data.frame <- function(df, excepto = character()) {
+quitar_0.data.frame <- function(df, excepto = character()) { # nolint
     stopifnot(
         "arg. df inadmisible" = inherits(df, "data.frame"),
         "arg. excepto inadmisible" = is.character(excepto) ||
@@ -51,7 +51,7 @@ quitar_0.data.frame <- function(df, excepto = character()) {
         }
 
         if (filled(ss)) {
-            df <- dplyr::filter_at(df, vars(ss), any_vars(. > 0))
+            df <- dplyr::filter_at(df, vars(ss), any_vars(. > 0)) # nolint
         }
     }
 
@@ -81,7 +81,7 @@ anexar_suma_cols <- function(df, cols) UseMethod("anexar_suma_cols")
 #'    anexar_suma_cols(x, 3)
 #' }
 #' @export
-anexar_suma_cols.data.frame <- function(df, cols) {
+anexar_suma_cols.data.frame <- function(df, cols) { # nolint
     es_num_log <- purrr::map_lgl(df,
                                  ~ is.numeric(.x) | is.logical(.x))
 
@@ -103,7 +103,7 @@ anexar_suma_cols.data.frame <- function(df, cols) {
 
             df <- as.list(suma_cols) %>%
                 as.data.frame() %>%
-                bind_rows(df, .)
+                bind_rows(df, .) # nolint
         }
     }
 
@@ -325,7 +325,7 @@ ok_fname <- function(x = character()) {
 #' @return Date
 #' @export
 hoy_date <- function() {
-    Sys.time() %>% as.Date()
+    as.Date(Sys.time())
 }
 
 #' Hoy
@@ -337,8 +337,7 @@ hoy_date <- function() {
 #' @examples
 #' año_mes_dia() #-> 2022-09-26
 año_mes_dia <- function(sep = "-") {
-    paste("%Y", "%m", "%d", sep = sep) %>%
-        format(Sys.time(), .)
+    format(Sys.time(), paste("%Y", "%m", "%d", sep = sep))
 }
 
 #' Día
@@ -366,8 +365,8 @@ dia_hora <- function() format(Sys.time(), "%d.%b%Y:%Hh")
 #' dia_hora_min() #-> 26.sep.2022:19:43
 dia_hora_min <- function(sep = ".") {
     fmt <- ifelse(sep == ".", "%d.%b%Y:%H:%M",
-                  paste("%d", "%b", "%Y","%H:%M", sep = sep))
-    Sys.time() %>% format(fmt)
+                  paste("%d", "%b", "%Y", "%H:%M", sep = sep))
+    format(Sys.time(), fmt)
 }
 
 ## --- misc ---
@@ -471,14 +470,9 @@ ningun_na <- function(x) !anyNA(x)
 #' na0(c(1:3, NA_integer_))
 #' @export
 na0 <- function(x) {
-    
     if (filled_num(x)) {
         x[is.na(x)] <- ifelse(typeof(x) == "integer", 0L, 0.0)
-    } else {
-        warning("... arg. sin datos o no es NUMERICO",
-                call. = FALSE)
     }
-
     return(x)
 }
 
@@ -488,9 +482,10 @@ na0 <- function(x) {
 #' @return numeric
 #' @export
 cero_na <- function(x) {
-    stopifnot("arg. x inadmisible" = filled_num(x))
-    na <- ifelse(typeof(x) == "integer", NA_integer_, NA_real_)
-    x[x == 0] <- na
+    if (filled_num(x)) {
+        na <- ifelse(typeof(x) == "integer", NA_integer_, NA_real_)
+        x[x == 0] <- na
+    }
     return(x)
 }
 
@@ -501,7 +496,7 @@ cero_na <- function(x) {
 #' @return character
 #' @export
 na_char <- function(x, a = "") {
-    if ( is.character(x) ) {
+    if (filled_char(x)) {
         x[is.na(x)] <- a
     }
     return(x)
