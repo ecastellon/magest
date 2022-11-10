@@ -1,0 +1,102 @@
+---
+title: "Lectura de Datos"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Lectura de datos}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  eval = FALSE,
+  echo = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(magest)
+```
+
+## Datos grabados con aplicaciones de Cspro o Csentry
+
+Las aplicaciones tipo _CSpro_ o _CSentry_ crean una tabla en una base
+de datos admiministrada por el gestor de bases de datos _MySql_. Hasta
+ahora, el nombre de la base de datos construida para las encuestas es
+_cspro_. Para cada encuesta hay una tabla distinta en la base de
+datos, que contiene al menos dos campos: _questionnaire_ y
+_quest_. Cada registro del campo _questionnaire_ es de tipo
+alfanumérico, el cual trae todos los datos asociados con un
+cuestionario o boleta en un tipo de arreglo conocido como «formato
+fijo» (en _R_ es usado el acrónimo _fwd_ para decir «fixed width
+format»). En ese formato, los datos de cada variable ocupan una
+posición dentro del registro, determinada por la posición del primer
+caracter y el número de caracteres asignados para registrar los datos
+de la variable en cuestión. Los programadores crean el archivo
+«diccionario de datos», donde se especifican la posición inicial y el
+número de caracteres asignados a cada variable. Entonces, para leer
+los datos de una encuesta, es necesario conocer el nombre de la tabla
+con los datos, el diccionario de datos correspondiente, y crear un
+objeto que sirva de ruta de acceso a la base de datos.
+
+### Diccionario de datos
+
+A efectos de la lectura, el diccionario debe estar en forma de un
+data.frame con las columnas _variable_ (nombre de la variable),
+_start_ (posición del primer caracter dentro del registro) y _length_
+(número de caracteres asignados a la variable). La función
+*leer_dic_dat_excel_* lee el diccionario que está en un archivo excel,
+y estandariza el nombre de las variables a letras minúsculas. El
+número de filas debe ser igual al número de variables.
+
+```{r}
+dd <- leer_dic_dat_xlsx("datos/oct_dic.xlsx", filas = 1:200,
+                        columnas = 2:4, hoja = 1)
+dd <- leer_dic_dat_xlsx("datos/oct_dic.xlsx", 200, 2:4)
+```
+
+Para crear el objeto que da el acceso a la base de datos se necesitan:
+el número ip del servidor (_host_), el nombre (_user_) y la clave
+de acceso (_password_) del usuario, y el nombre de la base de datos
+(_dbname_). Funciones relativas al tema: *par_conn_mysql*,
+*conn_mysql*, *close_mysql*, *conn_valido*.
+
+*par_conn_mysql* inicializa una lista con los datos de _host_, _user_,
+etc. y verifica que no hace falta alguno. La lista se puede pasar como
+argumento a *conn_mysql*. Si cualesquiera o todos los parámetros no
+son pasados en los argumentos la función los busca en las variables de
+ambiente (que pueden ser especificadas en el archivo de usuario
+_.renviron_) _MYSQLSERVERMAG_ (host), _MYSQLUID_ (user), _MYSQLPWD_
+(password) y _MYSQLDB_ (dbname).
+
+```{r}
+# todos los argumentos tomados de variables de ambiente
+pm <- par_conn_mysql()
+# sólo algunos argumentos
+pm <- par_conn_mysql(dbname = "basedatos")
+# explícitos
+pm <- par_conn_mysql(host = "10.22.168.199", dbname = "cspro",
+                     user = "eddy", password = "sinclave")
+```
+
+*conn_mysql* devuelve el enlace con la base de datos. Llama a
+*par_conn_mysql* para validar los parámetros o leer de las variables
+de ambiente.
+
+```{r}
+# lee de variables de ambiente
+cn <- conn_mysql()
+cn <- conn_mysql(dbname = "cspro")
+# explícitos
+cn <- conn_mysql(host = "10.22.168.199", dbname = "cspro",
+                 password = "sinclave", user = "eddy")
+
+# es válido el conector?
+conn_valido(cn)
+
+# inhabilita la conecxión
+close_mysql(cn)
+```
+
