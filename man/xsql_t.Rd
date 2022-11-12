@@ -54,9 +54,7 @@ La mayoría de las tablas donde se almacenan los datos de
 las encuestas son "planas" (todas las variables aparecen como
 un campo de la tabla), aunque para la estimación y el análisis,
 los datos se arreglan en un cuadro con la siguiente estructura
-(c??? es el nombre del campo)
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{cxx1 cxx2 cxx3 cxx4
+(c??? es el nombre del campo)\preformatted{cxx1 cxx2 cxx3 cxx4
 
 cxx5 cxx6 cxx7 cxx8
 
@@ -94,7 +92,7 @@ Para fines de comprobación, cada fila de los data.frame trae el
 «id» del registro de la tabla (parámetro "idr", que
 generalmente es el número de cuestionario) de donde se leyeron
 los datos.
-}\if{html}{\out{</div>}}
+}
 }
 \examples{
 xsql_t("segene", paste0("c", 121:126), c("cult", "semb", "per"))

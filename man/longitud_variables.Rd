@@ -23,12 +23,10 @@ parámetro "loncam" de la función get_data_cspro
 Los elementos del vector indican el número de caracteres
 que ocupa una variable dentro de la cadena de caracteres de un
 registro, o bien el número de caracteres (número negativo) que
-hay entre dos variables que no están contigüas en el registro.
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{El parámetro "dic" es un data.frame con las columnas "variable"
+hay entre dos variables que no están contigüas en el registro.\preformatted{El parámetro "dic" es un data.frame con las columnas "variable"
 y "length" tomadas del diccionario de datos de la tabla de
 Cspro.
-}\if{html}{\out{</div>}}
+}
 }
 \examples{
 dd <- data.frame(variable = c("boleta", "nombre", "direccion"),
