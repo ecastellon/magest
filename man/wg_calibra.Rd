@@ -33,9 +33,7 @@ Calibra las ponderaciones por grupo.
 \details{
 Aplica la función \code{w_calibra} a datos agrupados,
 como, por ejemplo, cuando se calibran las ponderaciones por la
-superficie de los estratos (grupos) de un departamento.
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{El arg. "dfo" es el data.frame con las columnas de los datos de
+superficie de los estratos (grupos) de un departamento.\preformatted{El arg. "dfo" es el data.frame con las columnas de los datos de
 la variable de calibración (p.ej. superficie), del grupo al que
 pertenece el dato (p.ej. estrato) y de las ponderaciones
 iniciales. La posición o nombre de esas columnas se pasa en el
@@ -49,7 +47,7 @@ arg. "cgr" en el orden: grupo, valor de la variable.
 
 La función devuelve el arg. "dfo" con la columna adicional «wc»
 en la que están los factores de calibración.
-}\if{html}{\out{</div>}}
+}
 }
 \examples{
 aa <- data.frame(x = 1:4, g = c("a", "a", "b", "b"),

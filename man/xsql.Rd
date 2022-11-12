@@ -40,9 +40,7 @@ el segundo tienen sus elementos nombrados, estos nombres se
 utilizarán como "alias" en el caso de la tabla, o para
 renombrar el campo en el resultado de la consulta (en la
 cláusula «as»). Si sólo hay una tabla involucrada, las listas
-pueden ser sustituidas por un vector.
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{Las cláusulas «where», «join» (inner, left, right), «order by»,
+pueden ser sustituidas por un vector.\preformatted{Las cláusulas «where», «join» (inner, left, right), «order by»,
 «order by», son opcionales y se especifican como argumentos de
 los correspondientes parámetros. Estas se deben introducir con
 la sintaxis correcta pues la función no valida eso.
@@ -51,7 +49,7 @@ Si la expresión contiene un «join», se requieren dos tablas, y
 la cláusula «on» es completada por el argumento al parámetro
 "whr". El tipo de «join» se puede indicar sólo con las primeras
 letras; e.g in(nner)
-}\if{html}{\out{</div>}}
+}
 }
 \examples{
 xsql(list(list("tab", c("cm1", "cm2"))))
