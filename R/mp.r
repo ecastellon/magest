@@ -1099,6 +1099,16 @@ conn_mysql  <- function(...) {
     invisible(con)
 }
 
+#' Valida conector con base de datos
+#' @description El objeto que permite acceso a base de datos es
+#'     válido?
+#' @param cn objeto conector con base de datos
+#' @return logical
+#' @export
+conn_valido <- function(cn) {
+    DBI::dbIsValid(cn)
+}
+
 #' Cierra conexión base de datos MySql
 #' @param x objeto: Conexión base datos MySql
 #' @export
@@ -1111,14 +1121,17 @@ close_mysql <- function(x) {
 #' Leer diccionario de datos Cspro
 #' @description Leer el diccionario de una base de datos de Cspro,
 #'     almacenado en una hoja de Excel
-#' @details El diccionario formado por 3 columnas nombradas: variable
-#'     (llenada con los nombres de las variables del cuestionario),
-#'     start (posición del primer caracter del dato correspondiente a
-#'     la variable) y length (número de caracteres que componen el
-#'     dato)
+#' @details El diccionario está formado por 3 columnas con los
+#'     nombres: variable (llenada con los nombres de las variables del
+#'     cuestionario), start (posición del primer caracter del dato
+#'     correspondiente a la variable) y length (número de caracteres
+#'     que componen el dato)
 #' @param xlsx character: nombre del archivo excel
-#' @param filas integer: número de filas que componen el diccionario
-#' @param columnas integer: número de las columnas que conforman el
+#' @param filas integer: número de filas que ocupa el diccionario en
+#'     la hoja excel. Si es un escalar, se supone que las filas van
+#'     desde la número 1 hasta la fila especificada en el número
+#'     pasado como argumento
+#' @param columnas integer: número de columnas que ocupa el
 #'     diccionario
 #' @param hoja integer: número de la hoja que contiene el
 #'     diccionario. Por omisión, la primera hoja
@@ -1284,17 +1297,26 @@ longitud_variables <- function(x = character(), dic) {
 #' @param artx character: nombre del archivo de salida. Por omisión,
 #'     un archivo temporal con extensión ".txt" y "cs" en primeros
 #'     caracteres.
-#' @return character: nombre del archivo
-#' @seealso ajustar_lon_reg_cs
+#' @param cn objeto para tener acceso a la base de datos. En el caso
+#'     de que sea \code{NULL} (valor por defecto) la función intenta
+#'     generar un objeto válido a partir de los parámetros de la
+#'     conexión tomados de variables de ambiente.
+#' @return character: nombre del archivo o NULL si no se logró
+#'     exportar
+#' @seealso conn_mysql, par_con_mysql, ajustar_lon_reg_cs
 #' @export
 exportar_datos_cs <- function(tab, dic,
                               artx = tempfile("cs",
-                                              fileext = ".txt")) {
+                                              fileext = ".txt"),
+                              cn = NULL) {
     stopifnot("archivo ya existe" = !file.exists(artx),
               "no puedo crear archivo" = ok_fname(artx))
 
-    cn <- conn_mysql()
-
+    if (is.null(cn)) {
+        cn <- conn_mysql()
+        if (is.null(cn)) return(cn)
+    }
+    
     del <- leer_campo_cspro(tab, "deleted", conn = cn) %>%
         extract2(1) %>%
         equals(1L)
@@ -1518,6 +1540,7 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
     w <- leer_campo_cspro(tab_dict, "questionnaire", ...) %>%
         extract2(1L)
 
+    if (is.null(w)) return(w)
     ## borrados (??)
     ## d <- leer_campo_cspro(tab_dict, "deleted", ...) %>%
     ##     extract2(1L) %>% equals(1L)
