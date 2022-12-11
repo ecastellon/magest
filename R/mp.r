@@ -615,6 +615,24 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
                            overwrite = TRUE, returnValue = TRUE)
 }
 
+#' @title Quita hoja excel
+#' @description Elimina hoja de libro excel
+#' @param arch character: nombre del archivo
+#' @param hoja character: nombre de la hoja que se eliminará
+#' @return
+#' @export
+quitar_hoja_excel <- function(arch, hoja) {
+    stopifnot("args. inadmisibles" = file.exists(arch) &&
+                  filled_char(hoja) && nzchar(hoja))
+    wb <- openxlsx::loadWorkbook(arch)
+    if (en(hoja, openxlsx::sheets(wb))) {
+        openxlsx::removeWorksheet(wb, hoja)
+        openxlsx::saveWorkbook(wb, arch, overwrite = TRUE)
+    } else {
+        message("... hoja NO existe !!!")
+    }
+}
+
 ##--- expresiones SQL ---
 
 #' SQL-expresión
