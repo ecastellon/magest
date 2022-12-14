@@ -11,6 +11,7 @@ guardar_excel(
   sobre_hoja = FALSE,
   fila = 1L,
   columna = 1L,
+  titulo = character(0),
   el_dia = TRUE
 )
 }
@@ -30,6 +31,8 @@ que ya existe. FALSE por omisión.}
 
 \item{columna}{integer: número de la columna de la celda superior
 izquierda de la tabla donde se guardarán los datos}
+
+\item{titulo}{character: una línea de título}
 
 \item{el_dia}{logical: Escribir una celda con la fecha y hora
 cuando se escribieron los datos?. TRUE por omisión}

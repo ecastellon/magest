@@ -4,7 +4,7 @@
 \alias{exportar_datos_cs}
 \title{Exportar datos cspro}
 \usage{
-exportar_datos_cs(tab, dic, artx = tempfile("cs", fileext = ".txt"))
+exportar_datos_cs(tab, dic, artx = tempfile("cs", fileext = ".txt"), cn = NULL)
 }
 \arguments{
 \item{tab}{character: nombre de la tabla en la base de datos MySQL}
@@ -14,9 +14,15 @@ exportar_datos_cs(tab, dic, artx = tempfile("cs", fileext = ".txt"))
 \item{artx}{character: nombre del archivo de salida. Por omisión,
 un archivo temporal con extensión ".txt" y "cs" en primeros
 caracteres.}
+
+\item{cn}{objeto para tener acceso a la base de datos. En el caso
+de que sea \code{NULL} (valor por defecto) la función intenta
+generar un objeto válido a partir de los parámetros de la
+conexión tomados de variables de ambiente.}
 }
 \value{
-character: nombre del archivo
+character: nombre del archivo o NULL si no se logró
+exportar
 }
 \description{
 Exporta los datos "limpios" a un archivo tipo texto.
@@ -29,5 +35,5 @@ supuesto de que el último registro es el más reciente y es el
 "correcto".
 }
 \seealso{
-ajustar_lon_reg_cs
+conn_mysql, par_con_mysql, ajustar_lon_reg_cs
 }

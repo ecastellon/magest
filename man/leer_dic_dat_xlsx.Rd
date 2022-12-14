@@ -9,9 +9,12 @@ leer_dic_dat_xlsx(xlsx, filas, columnas, hoja = 1L)
 \arguments{
 \item{xlsx}{character: nombre del archivo excel}
 
-\item{filas}{integer: número de filas que componen el diccionario}
+\item{filas}{integer: número de filas que ocupa el diccionario en
+la hoja excel. Si es un escalar, se supone que las filas van
+desde la número 1 hasta la fila especificada en el número
+pasado como argumento}
 
-\item{columnas}{integer: número de las columnas que conforman el
+\item{columnas}{integer: número de columnas que ocupa el
 diccionario}
 
 \item{hoja}{integer: número de la hoja que contiene el
@@ -25,11 +28,11 @@ Leer el diccionario de una base de datos de Cspro,
 almacenado en una hoja de Excel
 }
 \details{
-El diccionario formado por 3 columnas nombradas: variable
-(llenada con los nombres de las variables del cuestionario),
-start (posición del primer caracter del dato correspondiente a
-la variable) y length (número de caracteres que componen el
-dato)
+El diccionario está formado por 3 columnas con los
+nombres: variable (llenada con los nombres de las variables del
+cuestionario), start (posición del primer caracter del dato
+correspondiente a la variable) y length (número de caracteres
+que componen el dato)
 }
 \examples{
 \donttest{

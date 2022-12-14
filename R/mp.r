@@ -625,7 +625,7 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
 #' @description Elimina hoja de libro excel
 #' @param arch character: nombre del archivo
 #' @param hoja character: nombre de la hoja que se eliminará
-#' @return
+#' @return character
 #' @export
 quitar_hoja_excel <- function(arch, hoja) {
     stopifnot("args. inadmisibles" = file.exists(arch) &&
@@ -637,6 +637,7 @@ quitar_hoja_excel <- function(arch, hoja) {
     } else {
         message("... hoja NO existe !!!")
     }
+    hoja
 }
 
 ##--- expresiones SQL ---

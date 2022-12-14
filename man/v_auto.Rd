@@ -27,7 +27,9 @@ las «copias» para fines de manejo de los datos, por principio
 todas ellas deben hacer referencia al mismo cuestionario
 «origen», de modo que si hay dos o más «copias», se cae en
 error de «autorreferencia» si una tiene por «origen» un
-cuestionario y otra otro cuestionario «copia».\preformatted{El pmto. "qst" recibe la numeración o «id» de todos los
+cuestionario y otra otro cuestionario «copia».
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{El pmto. "qst" recibe la numeración o «id» de todos los
 cuestionarios, y el pmto. "dup" la de los correspondientes
 cuestionarios «origen». Si un elemento en "qst" es el «id» de
 un cuestionario «copia» de otro, el correspondiente en "dup"
@@ -37,7 +39,7 @@ lleva el número o «id» de su «origen»; si no es «copia», en
 La función devuelve el «id» de los cuestionarios «copia» que
 tienen como «origen» otro cuestionario «copia», o NULL si no
 hay error de autorreferencia.
-}
+}\if{html}{\out{</div>}}
 }
 \examples{
 aa <- 1:5

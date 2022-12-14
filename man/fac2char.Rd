@@ -15,4 +15,3 @@ character
 \description{
 transforma vector tipo factor a caracter
 }
-\keyword{internal}

@@ -33,10 +33,12 @@ en el resultado final los registros obtenidos con cada
 consulta, se puede agregar a cada una un campo de valor
 "constante", el cual aparecerá en el data.frame cuando se mande
 ejecutar la consulta. La función brinda esa facilidad por medio
-de los parámetros "idc" y "cid"\preformatted{La expresión «union» tiene dos variantes: «union» que no
+de los parámetros "idc" y "cid"
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{La expresión «union» tiene dos variantes: «union» que no
 devuelve registros que se repiten, y «union all» que incluye a
 todos.
-}
+}\if{html}{\out{</div>}}
 }
 \examples{
 cn <- c("select x, y from tx where y = 'a'",
