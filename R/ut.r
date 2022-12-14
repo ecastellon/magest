@@ -187,15 +187,12 @@ normalizar_data.data.frame <- function(df, col_id, vbl = character()) {
 #' @description transforma vector tipo factor a caracter
 #' @param x factor
 #' @return character
-#' @keywords internal
+#' @export
 fac2char <- function(x) {
     if (is.factor(x)) {
-        ww <- levels(x)[x]
-    } else {
-        message("argumento no es factor...")
-        ww <- x
+        x <- levels(x)[x]
     }
-    ww
+    x
 }
 
 #' Separar palabras

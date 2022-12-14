@@ -564,12 +564,13 @@ db_drop.RODBC <- function(x, tb = character()) {
 #' @param columna integer: número de la columna de la celda superior
 #'     izquierda de la tabla donde se guardarán los datos
 #' @param fila integer: número de la fila
+#' @param titulo character: una línea de título
 #' @param el_dia logical: Escribir una celda con la fecha y hora
 #'     cuando se escribieron los datos?. TRUE por omisión
 #' @return nada
 #' @export
 guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
-                          fila = 1L, columna = 1L,
+                          fila = 1L, columna = 1L, titulo = character(0),
                           el_dia = TRUE) {
     ## verificar que sea hoja válida
     ## verificar hoja existe
@@ -605,8 +606,13 @@ guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
     }
 
     if (el_dia) {
-        ss <- format(Sys.time( ), "%d.%b%Y:%I:%M%p")
+        ss <- format(Sys.time(), "%d.%b%Y:%I:%M%p")
         openxlsx::writeData(wb, hoja, ss, columna, fila)
+        fila <- fila + 1L
+    }
+
+    if (filled_char(titulo)) {
+        openxlsx::writeData(wb, hoja, titulo, columna, fila)
         fila <- fila + 1L
     }
 
@@ -963,7 +969,12 @@ xsql_st <- function(x, tabla) {
                   nzchar(tabla) && (tip == 1 | tip == 2))
     x[[1]] <- tabla
     if (tip == 1) {
-        x[[2]] <- append(x[[2]], "quest", 0)
+        nm <- names(x[[2]])
+        if (is.null(nm)) {
+            x[[2]] <- append(x[[2]], "quest", 0)
+        } else {
+            x[[2]] <- append(x[[2]], c(quest = "quest"), 0)
+        }
         xs <- do.call("xsql_s", x)
     } else {
         xs <- do.call("xsql_t", x)

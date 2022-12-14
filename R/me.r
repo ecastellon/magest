@@ -600,14 +600,14 @@ varianza_pps_cr <- function(x, w = numeric( ), sin0 = TRUE) {
     if (!length(w)) {
         w <- numeric(length(x)) + 1.0
     }
-    
+
     if (sin0) {
         w <- w[x != 0]
         x <- x[x != 0]
     }
 
     n <- length(x)
-    if(!n) {
+    if (!n) {
         vz <- NA_real_
     } else {
         vz <- var(x * w, na.rm = TRUE) * n
