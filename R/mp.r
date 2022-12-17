@@ -1334,6 +1334,11 @@ longitud_variables <- function(x = character(), dic) {
 #' @return character: nombre del archivo o NULL si no se logró
 #'     exportar
 #' @seealso conn_mysql, par_con_mysql, ajustar_lon_reg_cs
+#' @examples
+#' \donttest{
+#'      dic <- leer_dic_dat_xlsx("datos/hato-dic.xlsx", 534, 2:4)
+#'      exportar_datos_cs("cspro", dic = dic)
+#' }
 #' @export
 exportar_datos_cs <- function(tab, dic,
                               artx = tempfile("cs",
@@ -1346,7 +1351,7 @@ exportar_datos_cs <- function(tab, dic,
         cn <- conn_mysql()
         if (is.null(cn)) return(cn)
     }
-    
+
     del <- leer_campo_cspro(tab, "deleted", conn = cn) %>%
         extract2(1) %>%
         equals(1L)
@@ -1436,7 +1441,7 @@ leer_datos_fwf <- function(variables = character(),
 #' @return data.frame
 #' @export
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' leer_cuadros_fwf(c("quest", "c001", "c002", "c003", "c004"),
 #'                  columnas = c("cultivo", "precio"),
 #'                  tipo_col = c("integer",
@@ -1458,7 +1463,7 @@ leer_cuadros_fwf <- function(variables, columnas, tipo_col,
     names(x)[cg] <- rep(columnas, length.out = nv - 1)
 
     split(cg, rep(seq_len(ng), each = nc)) %>%
-        map_dfr(function(r) x[, c(1, r)])
+        purrr::map_dfr(function(r) x[, c(1, r)])
 }
 
 #' Campo-CSpro
@@ -1604,10 +1609,12 @@ get_data_cspro <- function(tab_dict = character(), dat_dict,
     # alternativa es utilizar substring para extraer las variables
     tf <- tempfile()
     cat(w, file = tf, sep = "\n")
-    w <- read.fwf(tf, widths = loncam, col.names = columnas,
+    colnm <- ordenar_conforme(columnas, dat_dict$variable)
+    w <- read.fwf(tf, widths = loncam, col.names = colnm,
                   colClasses = clase_col,
                   comment.char = "", strip.white = TRUE,
                   na.strings = "", stringsAsFactors = FALSE)
+    w <- w[, columnas]
     unlink(tf)
 
     invisible(w)
