@@ -1458,7 +1458,7 @@ leer_cuadros_fwf <- function(variables, columnas, tipo_col,
     names(x)[cg] <- rep(columnas, length.out = nv - 1)
 
     split(cg, rep(seq_len(ng), each = nc)) %>%
-        map_dfr(function(r) x[, c(1, r)])
+        purrr::map_dfr(function(r) x[, c(1, r)])
 }
 
 #' Campo-CSpro
