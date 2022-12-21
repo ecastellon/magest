@@ -1143,7 +1143,7 @@ conn_valido <- function(cn) {
 #' @param x objeto: Conexión base datos MySql
 #' @export
 close_mysql <- function(x) {
-    if (inherits(x, "MariaDBConnection")) {
+    if (inherits(x, "MariaDBConnection") && conn_valido(x)) {
         RMariaDB::dbDisconnect(x)
     }
 }
@@ -1475,6 +1475,10 @@ leer_cuadros_fwf <- function(variables, columnas, tipo_col,
 #' @seealso conn_mysql
 #' @param tab_dict character: nombre de la tabla en la base de datos
 #' @param campo character: nombre del campo
+#' @param con_borrado logical: incluir el campo "deleted" en la
+#'     consulta?. TRUE por omisión.
+#' @param nreg numeric: número de registros a devolver. Por omisión,
+#'     todos (nreg = -1)
 #' @param ... argumentos para los parámetros de la función conn_mysql
 #' @return data.frame o NULL si error en la conexión a la base de
 #'     datos
@@ -1488,14 +1492,15 @@ leer_cuadros_fwf <- function(variables, columnas, tipo_col,
 #' cn <- conn_mysql()
 #' leer_campo_cspro("hatodict", "id_Quest", conn=cn)
 leer_campo_cspro <- function(tab_dict = character(),
-                             campo = "questionnaire", ...) {
+                             campo = "questionnaire",
+                             con_borrado = TRUE, nreg = -1, ...) {
 
     stopifnot("arg. tab_dict inválido" = is.character(tab_dict) &&
                   length(tab_dict) && nzchar(tab_dict))
 
     x <- list(...)
 
-    conn_arg <- is.element("conn", names(x))
+    conn_arg <- utils::hasName(x, "conn")
     if (conn_arg) {
         conn <- x$conn
     } else {
@@ -1506,8 +1511,10 @@ leer_campo_cspro <- function(tab_dict = character(),
         return(conn)
     }
 
+    if (con_borrado) campo <- paste0(campo, ",deleted")
+    
     ss <- paste("select", campo, "from", tab_dict)
-    w <- tryCatch(RMariaDB::dbGetQuery(conn, ss),
+    w <- tryCatch(RMariaDB::dbGetQuery(conn, ss, n = nreg),
                   error = function(e) {
                       message("\n... ERROR durante lectura !!!")
                       NULL}
@@ -1523,12 +1530,12 @@ leer_campo_cspro <- function(tab_dict = character(),
 #' Leer-CSpro
 #' @description Leer los datos de las variables de una encuesta que ha
 #'     sido digitada con CSpro o CSentry
-#' @details En la base de datos de Cspro cada encuesta está
-#'     almacenada en una sola tabla. El campo "questionnaire" trae los
-#'     datos de las variables en el cuestionario de la encuesta. Cada
-#'     elemento de ese campo corresponde a un cuestionario, y consiste
-#'     de una sola ristra de caracteres dentro de la cual los datos
-#'     de una variable ocupan una posición y un número de caracteres
+#' @details En la base de datos de Cspro cada encuesta está almacenada
+#'     en una sola tabla. El campo "questionnaire" trae los datos de
+#'     las variables en el cuestionario de la encuesta. Cada elemento
+#'     de ese campo corresponde a un cuestionario, y consiste de una
+#'     sola ristra de caracteres dentro de la cual los datos de una
+#'     variable ocupan una posición y un número de caracteres
 #'     determinado, ambos definidos en el "diccionario de datos". Para
 #'     cargar los datos en un data.frame, la función manda escribir
 #'     cada elemento de "questionnaire" como una línea de un archivo
@@ -1544,6 +1551,10 @@ leer_campo_cspro <- function(tab_dict = character(),
 #'     variables en el resultado
 #' @param clase_col character: tipo de vector de la variable
 #'     (character, integer, real, ...). Opcional.
+#' @param sin_borrado logical: excluye los registros marcados como
+#'     borrados?. Por omisión, TRUE
+#' @param nreg integer: número de registros a devolver. Por omisión,
+#'     todos (nreg = -1)
 #' @param ... character: Argumentos para establecer la conexión (host,
 #'     dbname, userid, password) o la conexión si ya fue establecida
 #'     (conn)
@@ -1566,23 +1577,20 @@ leer_campo_cspro <- function(tab_dict = character(),
 #'                     dbname = "bd", password = Sys.getenv("pwd"))}
 get_data_cspro <- function(tab_dict = character(), dat_dict,
                            columnas = character(),
-                           clase_col = character(), ...) {
-
+                           clase_col = character(),
+                           sin_borrado = TRUE, nreg = -1, ...) {
+    COLDAT <- "questionnaire"
     ## -- vale argumentos --
     ## ninguno "vacío"
     ## length(loncam) <= length(columnas)
     ## excepto los anteriores, los demás son escalares
-    w <- leer_campo_cspro(tab_dict, "questionnaire", ...) %>%
-        extract2(1L)
-
+    w <- leer_campo_cspro(tab_dict, COLDAT, nreg = nreg, ...)
     if (is.null(w)) return(w)
-    ## borrados (??)
-    ## d <- leer_campo_cspro(tab_dict, "deleted", ...) %>%
-    ##     extract2(1L) %>% equals(1L)
 
-    ## if ( any(d) ) {
-    ##     w <- w[!d]
-    ## }
+    if (sin_borrado) {
+        w %<>% filter(deleted == 0)
+    }
+    w <- w[, COLDAT]
 
     ## preproceso registros caracteres incompletos
     loncam <- longitud_variables(columnas, dat_dict)
