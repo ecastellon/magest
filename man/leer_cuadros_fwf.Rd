@@ -40,7 +40,7 @@ variables «c001» y «c003» refieren al atributo «cultivo», y las
 otras dos al atributo «precio».
 }
 \examples{
-\dontrun{
+\donttest{
 leer_cuadros_fwf(c("quest", "c001", "c002", "c003", "c004"),
                  columnas = c("cultivo", "precio"),
                  tipo_col = c("integer",

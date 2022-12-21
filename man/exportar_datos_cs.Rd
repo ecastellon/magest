@@ -34,6 +34,12 @@ los que tienen datos duplicados en la variable "quest", bajo el
 supuesto de que el último registro es el más reciente y es el
 "correcto".
 }
+\examples{
+\donttest{
+     dic <- leer_dic_dat_xlsx("datos/hato-dic.xlsx", 534, 2:4)
+     exportar_datos_cs("cspro", dic = dic)
+}
+}
 \seealso{
 conn_mysql, par_con_mysql, ajustar_lon_reg_cs
 }
