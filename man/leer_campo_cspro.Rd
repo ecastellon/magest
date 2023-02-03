@@ -4,12 +4,24 @@
 \alias{leer_campo_cspro}
 \title{Campo-CSpro}
 \usage{
-leer_campo_cspro(tab_dict = character(), campo = "questionnaire", ...)
+leer_campo_cspro(
+  tab_dict = character(),
+  campo = "questionnaire",
+  con_borrado = TRUE,
+  nreg = -1,
+  ...
+)
 }
 \arguments{
 \item{tab_dict}{character: nombre de la tabla en la base de datos}
 
 \item{campo}{character: nombre del campo}
+
+\item{con_borrado}{logical: incluir el campo "deleted" en la
+consulta?. TRUE por omisión.}
+
+\item{nreg}{numeric: número de registros a devolver. Por omisión,
+todos (nreg = -1)}
 
 \item{...}{argumentos para los parámetros de la función conn_mysql}
 }
