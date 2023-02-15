@@ -22,9 +22,7 @@ Crea e inicializa un objeto de clase odb.
 Con las propiedades de este objeto se construye la cadena
 de conexión ('connection string') que habilita 'conectarse' o
 'abrir' la base de datos para mandar ejecutar instrucciones
-de consulta.
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{Para cada servidor de base de datos (SQL server, Excel, Access,
+de consulta.\preformatted{Para cada servidor de base de datos (SQL server, Excel, Access,
 MySQL, SQLite, etc.) hay una 'connection string' específica
 según la aplicación que sirve de intermediario con el servidor.
 
@@ -46,7 +44,7 @@ de acceso al libro: 'Driver=\{Microsoft Excel Driver (*.xls,
 *.xlsx, *.xlsm, *.xlsb)\}; DBQ=\url{c:/MyExcel.xlsx};'. En este
 caso, 'Driver' y 'Dbq' son las propiedades que se deben
 especificar por medio de un objeto de la clase odb.
-}\if{html}{\out{</div>}}
+}
 }
 \examples{
 ob <- odb(Driver = "{SQL Server}", server = "ser.o.no.ser",

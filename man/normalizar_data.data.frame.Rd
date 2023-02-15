@@ -30,9 +30,7 @@ en las encuestas) se mide la misma variable en diferentes
 fechas o en distintas partes de la unidad, como es el caso, en
 las encuestas agrícolas, cuando en la misma finca se anotan las
 superficies sembradas de diferentes cultivos. En tales casos se
-puede terminar con una tabla de datos como la siguiente:
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{quest c231 c234 c451 c454
+puede terminar con una tabla de datos como la siguiente:\preformatted{quest c231 c234 c451 c454
 10500    1    2    2    3
 10510    0    0    2    6
 
@@ -56,7 +54,7 @@ quest cultivo sembrada
 En la librería ya existe una función que devuelve la expresión
 SQL que produce una tabla normalizada cuando se leen los
 datos: «xsql_t»
-}\if{html}{\out{</div>}}
+}
 }
 \examples{
 x <- data.frame(q = 1:4, a = sample(1:4), b = sample(2 * (1:4)),

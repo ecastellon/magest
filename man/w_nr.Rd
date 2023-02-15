@@ -33,9 +33,7 @@ función también se puede utilizar para calcular la ponderación
 por "elegilibilidad desconocida". Para este caso, el parámetro
 "qnr" lleva los códigos de "elegilibilidad desconocida" (o
 "no contacto") y "qsr" los de "elegilibilidad conocida"
-(respondieron + no respondieron + no elegible conocido).
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{Una unidad es "elegible" si es miembro de la población
+(respondieron + no respondieron + no elegible conocido).\preformatted{Una unidad es "elegible" si es miembro de la población
 muestreada (en una encuesta agrícola por ejemplo, las unidades
 de producción no agrícola serían "no elegibles"). Es posible
 que al finalizar la encuesta, la condición de elegilibilidad de
@@ -51,7 +49,7 @@ supone que esa probabilidad es igual para todas las unidades
 miembros de una misma clase (por ejemplo, todas las fincas en
 un mismo municipio; o todos los productores con tales o cuales
 características).
-}\if{html}{\out{</div>}}
+}
 }
 \examples{
 clase <- c(1, 2, 1, 2, 2, 2)
