@@ -94,12 +94,12 @@ w_pr <- function(x, dfe, cob = seq.int(3), ces = seq.int(4),
         pp <- dfe[[ces["sup"]]] / dfe[[ces["tam"]]] #prom por punto
         fx <- round(pp[mm] / x[[cob["sup"]]], dec) #factor
         if (any(ii <- !is.finite(fx))) {
-            warning(paste("\n... sin factor", sum(ii)), call. = FALSE)
+            warning(paste("... sin factor", sum(ii)), call. = FALSE)
             fx[ii] <- NA_real_
         }
     } else {
         message("\n... inconsistencia de código dpto o estrato en",
-                      "los data.frame !!!")
+                      " los data.frame !!!")
     }
 
     return(fx)
@@ -323,7 +323,7 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
 #'     puntos de la muestra actual; es decir, debe haberse filtrado
 #'     antes si hubiera algún esquema de rotación de la muestra.
 #'
-#'     La función llama las funciones preparar_pto y preparar_sup.
+#'     La función llama las funciones df_pto y df_sup.
 #' @param dfq data.frame con los datos de código de cuestionario,
 #'     control de llenado y control de copia
 #' @param dfp data.frame con los datos de departamento, municipio y
@@ -348,7 +348,7 @@ df_sup <- function(dfq, cues = "quest", cdup = "copiade",
 #'     "mun"
 #' @param cest character: nombre de la columna con el código del
 #'     estrato. Por omisión, "est".
-#' @param csup numeric: nombre de la columna con los datos de
+#' @param csup character: nombre de la columna con los datos de
 #'     superficie de la unidad de producción. Por omisión, "sup"
 #' @param dft data.frame con los datos de superficie de la unidad de
 #'     producción. Es opcional (vea detalles)
@@ -727,6 +727,31 @@ out_remplazo <- function(x, cota = 0.0, fun, mayor = TRUE,
 }
 
 ##--- misc ---
+
+#' duplicada sin origen
+#' @description Identifica los cuestionarios "copia" que no tienen
+#'     cuestionario "origen"
+#' @details Devuelve los elementos en "qst" con el problema
+#' @param qst numeric: códigos o «id» de los cuestionarios
+#' @param dup numeric: códigos de los cuestionarios «origen»
+#' @return numeric o NULL
+#' @export
+duplicada_sin_origen <- function(qst, dup) {
+    stopifnot("arg. inadmisible" = filled_num(qst) &&
+                  filled_num(dup) && length(qst) == length(dup))
+
+    ii <- no_na(dup)
+    mm <- match(dup[ii], qst)
+    jj <- no_na(mm)
+    if (any(!jj)) {
+        message(sum(!jj), " duplicadas sin origen")
+        sin <- qst[which(ii)[!jj]]
+        sin[order(sin)]
+    } else {
+        sin <- NULL
+    }
+    sin
+}
 
 #' autorreferencias
 #' @description Identifica los cuestionarios «copia» con error de
