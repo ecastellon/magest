@@ -36,11 +36,9 @@ argumentos, se construyen multiplicando una referencia
 (parámetro «frac»). El factor para calcular el límite superior
 es (1 + frac), y para el inferior, (1 - frac). Los datos NA se
 excluyen y se devuelven tal cuales. El intervalo puede ser
-cerrado o abierto, según el parámetro «inclusive»
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{Si es omitido «ref», se asume que la función \code{mean} ocupa
+cerrado o abierto, según el parámetro «inclusive»\preformatted{Si es omitido «ref», se asume que la función \code{mean} ocupa
 su lugar
-}\if{html}{\out{</div>}}
+}
 }
 \examples{
 x <- 1:5

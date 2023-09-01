@@ -31,9 +31,7 @@ registro sólo tenga, digamos, 80 caracteres, y la variable
 busca leerse a partir del caracter 81 o después). Además, si se
 pasan argumentos al parámetro colClasses de read.fwf, se genera
 un error y se detiene el proceso de lectura cuando trata de
-leer datos que no existen.
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{La función completa los registros con espacios al final,
+leer datos que no existen.\preformatted{La función completa los registros con espacios al final,
 conforme a las especificaciones en el diccionario.
-}\if{html}{\out{</div>}}
+}
 }

@@ -9,6 +9,8 @@ get_data_cspro(
   dat_dict,
   columnas = character(),
   clase_col = character(),
+  sin_borrado = TRUE,
+  nreg = -1,
   ...
 )
 }
@@ -24,6 +26,12 @@ variables en el resultado}
 \item{clase_col}{character: tipo de vector de la variable
 (character, integer, real, ...). Opcional.}
 
+\item{sin_borrado}{logical: excluye los registros marcados como
+borrados?. Por omisión, TRUE}
+
+\item{nreg}{integer: número de registros a devolver. Por omisión,
+todos (nreg = -1)}
+
 \item{...}{character: Argumentos para establecer la conexión (host,
 dbname, userid, password) o la conexión si ya fue establecida
 (conn)}
@@ -36,12 +44,12 @@ Leer los datos de las variables de una encuesta que ha
 sido digitada con CSpro o CSentry
 }
 \details{
-En la base de datos de Cspro cada encuesta está
-almacenada en una sola tabla. El campo "questionnaire" trae los
-datos de las variables en el cuestionario de la encuesta. Cada
-elemento de ese campo corresponde a un cuestionario, y consiste
-de una sola ristra de caracteres dentro de la cual los datos
-de una variable ocupan una posición y un número de caracteres
+En la base de datos de Cspro cada encuesta está almacenada
+en una sola tabla. El campo "questionnaire" trae los datos de
+las variables en el cuestionario de la encuesta. Cada elemento
+de ese campo corresponde a un cuestionario, y consiste de una
+sola ristra de caracteres dentro de la cual los datos de una
+variable ocupan una posición y un número de caracteres
 determinado, ambos definidos en el "diccionario de datos". Para
 cargar los datos en un data.frame, la función manda escribir
 cada elemento de "questionnaire" como una línea de un archivo
