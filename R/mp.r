@@ -769,7 +769,7 @@ xsql_s <- function(x = character(), cam = "*") {
     stopifnot("arg. inadmisibles" = is_scalar_name(x) &&
                   filled_char(cam))
 
-    if (!is_scalar(cam)) {
+    if (cam != "*") {
         nm <- names(cam)
         if (filled(nm)) {
             cam <- paste(cam, nm, sep = " as ")
@@ -1512,7 +1512,7 @@ leer_campo_cspro <- function(tab_dict = character(),
     }
 
     if (con_borrado) campo <- paste0(campo, ",deleted")
-    
+
     ss <- paste("select", campo, "from", tab_dict)
     w <- tryCatch(RMariaDB::dbGetQuery(conn, ss, n = nreg),
                   error = function(e) {
