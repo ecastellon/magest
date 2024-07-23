@@ -1136,7 +1136,7 @@ conn_mysql  <- function(...) {
 #' @return logical
 #' @export
 conn_valido <- function(cn) {
-    DBI::dbIsValid(cn)
+    (!is.null(cn)) && DBI::dbIsValid(cn)
 }
 
 #' Cierra conexión base de datos MySql
@@ -1232,6 +1232,11 @@ ajustar_lon_reg_cs <- function(x, df_dic) {
     nc <- sum(df_dic$length)
 
     nn <- vapply(x, nchar, 1L, USE.NAMES = FALSE)
+
+    if ( any(nn != nc) ) {
+        warning("\n!!! Hay registros que discrepan con el diccionario" )
+    }
+
     nr <- (nc - nn) %>%
         is_greater_than(0) %>%
         which()
@@ -1347,9 +1352,14 @@ exportar_datos_cs <- function(tab, dic,
     stopifnot("archivo ya existe" = !file.exists(artx),
               "no puedo crear archivo" = ok_fname(artx))
 
-    if (is.null(cn)) {
+    cn_arg_nulo <- is.null(cn)
+    if (cn_arg_nulo) {
         cn <- conn_mysql()
-        if (is.null(cn)) return(cn)
+    }
+
+    if (!conn_valido(cn)) {
+        warning("\n!!! No es válido el conector de la base de datos")
+        return(NULL)
     }
 
     del <- leer_campo_cspro(tab, "deleted", conn = cn) %>%
@@ -1364,7 +1374,7 @@ exportar_datos_cs <- function(tab, dic,
         filter(!del) %>%
         extract2(1)
 
-    close_mysql(cn)
+    if (cn_arg_nulo) close_mysql(cn)
 
     txt <- ajustar_lon_reg_cs(txt, dic)
 
