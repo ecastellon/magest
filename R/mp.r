@@ -1332,6 +1332,7 @@ longitud_variables <- function(x = character(), dic) {
 #' @param artx character: nombre del archivo de salida. Por omisión,
 #'     un archivo temporal con extensión ".txt" y "cs" en primeros
 #'     caracteres.
+#' @param sin_duplicados logical: TRUE por omisión
 #' @param cn objeto para tener acceso a la base de datos. En el caso
 #'     de que sea \code{NULL} (valor por defecto) la función intenta
 #'     generar un objeto válido a partir de los parámetros de la
@@ -1348,17 +1349,18 @@ longitud_variables <- function(x = character(), dic) {
 exportar_datos_cs <- function(tab, dic,
                               artx = tempfile("cs",
                                               fileext = ".txt"),
+                              sin_duplicados = TRUE,
                               cn = NULL) {
     stopifnot("archivo ya existe" = !file.exists(artx),
               "no puedo crear archivo" = ok_fname(artx))
 
-    cn_arg_nulo <- is.null(cn)
-    if (cn_arg_nulo) {
+    no_my_sql_con <- !inherits(cn, "MySQLConnection")
+    if (no_my_sql_con) {
         cn <- conn_mysql()
     }
 
     if (!conn_valido(cn)) {
-        warning("\n!!! No es válido el conector de la base de datos")
+        warning("\n!!! No es válida la conexión a la base de datos")
         return(NULL)
     }
 
@@ -1367,19 +1369,20 @@ exportar_datos_cs <- function(tab, dic,
         equals(1L)
 
     txt <- leer_campo_cspro(tab, "questionnaire", conn = cn) %>%
-        filter(!del) %>%
+        filter(deleted == 0) %>%
         extract2(1)
 
     qst <- leer_campo_cspro(tab, "id_QUEST", conn = cn) %>%
-        filter(!del) %>%
+        filter(deleted == 0) %>%
         extract2(1)
 
-    if (cn_arg_nulo) close_mysql(cn)
+    if (no_my_sql_con) close_mysql(cn)
 
     txt <- ajustar_lon_reg_cs(txt, dic)
 
     nr <- seq.int(length(qst), 1L)
-    if ( anyDuplicated(qst) ) {
+    dr <- 0L
+    if ( sin_duplicados && anyDuplicated(qst) ) {
         dr <- qst[nr] %>% duplicated()
         txt <- txt[!dr[nr]]
     }
@@ -1433,17 +1436,20 @@ leer_datos_fwf <- function(variables = character(),
 #' @details Lee los datos en un archivo tipo «fwf», de varias
 #'     variables relacionadas con un mismo grupo de atributos; separa
 #'     las variables conforme a los atributos en común y las une con
-#'     un rbind. La primera variable debe identificar los registros
-#'     (generalmente el número del cuestionario), y las demás deben
-#'     ser, en número, un múltiplo del número de columnas (atributos
-#'     en común) del data.frame resultante. En el ejemplo, las
-#'     variables «c001» y «c003» refieren al atributo «cultivo», y las
-#'     otras dos al atributo «precio».
+#'     un rbind. La variable en arg. "varid" es la que identifica los
+#'     registros (generalmente el número del cuestionario), y las
+#'     demás deben ser, en número, un múltiplo del número de columnas
+#'     (atributos en común) del data.frame resultante. En el ejemplo,
+#'     las variables «c001» y «c003» refieren al atributo «cultivo», y
+#'     las otras dos al atributo «precio».
 #' @param variables character: los nombres de las variables que se van
 #'     a leer del archivo
+#' @param varid character: nombre de la variable que identifica los
+#'     registros. Por default, "quest"
 #' @param columnas character: nombres de los atributos en común que
 #'     serán las columnas del data.frame resultante
-#' @param tipo_col character: tipos de los datos en el archivo
+#' @param tipo_col character: tipo de datos en las columnas
+#'     "variables"
 #' @param dic data.frame: data.frame con los datos del diccionario de
 #'     datos
 #' @param nomar character: nombre del archivo donde están todos los
@@ -1452,25 +1458,31 @@ leer_datos_fwf <- function(variables = character(),
 #' @export
 #' @examples
 #' \donttest{
-#' leer_cuadros_fwf(c("quest", "c001", "c002", "c003", "c004"),
+#' leer_cuadros_fwf(c("c001", "c002", "c003", "c004"),
+#'                  varid = "quest",
 #'                  columnas = c("cultivo", "precio"),
-#'                  tipo_col = c("integer",
-#'                               rep(c("integer", "double"), 2)),
+#'                  tipo_col = c("integer", "double"),
 #'                  dic = dicc, nomar = "arch.txt")}
 leer_cuadros_fwf <- function(variables, columnas, tipo_col,
-                             dic, nomar) {
+                             varid, dic, nomar) {
     nv <- length(variables)
     nc <- length(columnas)
-    cg <- 2:nv
-    ng <- (nv - 1) %/% nc
-    ok <- (nc * ng) == (nv - 1)
+    cg <- seq_len(nv) + 1L
+
+    ng <- nv %/% nc
+    ok <- (nc * ng) == nv
 
     stopifnot("variables no múltiplo de columnas" = ok)
+
+    variables <- c(varid, variables)
+    tipo_col <- c("integer", rep(tipo_col, ng))
+
     x <- tryCatch(leer_datos_fwf(variables, variables, tipo_col,
                                  dic, nomar),
                   error = function(e) print(variables))
 
-    names(x)[cg] <- rep(columnas, length.out = nv - 1)
+
+    names(x)[cg] <- rep(columnas, length.out = nv)
 
     split(cg, rep(seq_len(ng), each = nc)) %>%
         purrr::map_dfr(function(r) x[, c(1, r)])
@@ -1517,7 +1529,8 @@ leer_campo_cspro <- function(tab_dict = character(),
         conn <- conn_mysql(...)
     }
 
-    if (is.null(conn)) {
+    if (!inherits(conn, "MySQLConnection")) {
+        warning("\n!!! no es MySQLConnection" )
         return(conn)
     }
 
