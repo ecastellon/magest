@@ -111,7 +111,7 @@ anexar_suma_cols.data.frame <- function(df, cols) { # nolint
 }
 
 #' @export
-normalizar_data <- function(df, cols) UseMethod("normalizar_data")
+normalizar_data <- function(df, col_id, vbl) UseMethod("normalizar_data")
 
 #' Normalizar data.frame
 #' @description Normaliza un data.frame que tiene datos de la misma

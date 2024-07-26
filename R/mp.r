@@ -1451,7 +1451,7 @@ leer_datos_fwf <- function(variables = character(),
 #' @param tipo_col character: tipo de datos en las columnas
 #'     "variables"
 #' @param col_nom_fi character: columna con nombres de filas. Opcional
-#' @param nom_fila character: etiquetas de filas del cuadro. Opcional
+#' @param nom_fi character: etiquetas de filas del cuadro. Opcional
 #' @param dic data.frame: data.frame con los datos del diccionario de
 #'     datos
 #' @param nomar character: nombre del archivo donde están todos los
@@ -1470,8 +1470,8 @@ leer_cuadros_fwf <- function(variables, idr = "quest", columnas, tipo_col,
                              nom_fi = character(0),
                              dic, nomar) {
 
-    stopifnot("falta arg. nom_fila" = filled_char(col_nom_fi) &&
-                  filled_char(nom_fi))
+    ## stopifnot("falta arg. nom_fila" = filled_char(col_nom_fi) &&
+    ##               !filled_char(nom_fi))
 
     nv <- length(variables)
     nc <- length(columnas)
@@ -1489,8 +1489,10 @@ leer_cuadros_fwf <- function(variables, idr = "quest", columnas, tipo_col,
     variables <- c(idr, variables)
     tipo_col <- c("integer", rep(tipo_col, ng))
 
-    x <- tryCatch(leer_datos_fwf(variables, variables, tipo_col,
-                                 dic, nomar),
+    x <- tryCatch(leer_datos_fwf(variables = variables,
+                                 columnas = variables,
+                                 tipo_col = tipo_col,
+                                 dic = dic, nomar = nomar),
                   error = function(e) print(variables))
 
     ## names(x)[cg] <- rep(columnas, length.out = nv)
@@ -1498,7 +1500,7 @@ leer_cuadros_fwf <- function(variables, idr = "quest", columnas, tipo_col,
     ##     purrr::map_df(function(r) x[, c(1, r)]) %>%
     ##     purrr::list_rbind( )
 
-    y <- normalizar_data(x, idr, columnas)
+    y <- normalizar_data(x, col_id = idr, vbl = variables)
 
     ## el número de registros debe ser múltiplo
     if ( filled_char(nom_fi) ) {
