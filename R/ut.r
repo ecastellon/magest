@@ -131,7 +131,7 @@ normalizar_data <- function(df, cols) UseMethod("normalizar_data")
 #'     10510    0    0    2    6
 #'
 #'     donde la columna quest trae los datos del «id» de la finca,
-#'     c234 y c451 los datos del cultivo, y c234 y c454 las manzanas
+#'     c231 y c451 los datos del cultivo, y c234 y c454 las manzanas
 #'     sembradas de los cultivos en cuestión. En realidad sólo hay dos
 #'     variables: «cultivo» y «sembrada». Uno de los problemas con la
 #'     falta de normalización es que la tabla puede llevar muchos
