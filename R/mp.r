@@ -1436,7 +1436,7 @@ leer_datos_fwf <- function(variables = character(),
 #' @details Lee los datos en un archivo tipo «fwf», de varias
 #'     variables relacionadas con un mismo grupo de atributos; separa
 #'     las variables conforme a los atributos en común y las une con
-#'     un rbind. La variable en arg. "varid" es la que identifica los
+#'     un rbind. La variable en arg. "idr" es la que identifica los
 #'     registros (generalmente el número del cuestionario), y las
 #'     demás deben ser, en número, un múltiplo del número de columnas
 #'     (atributos en común) del data.frame resultante. En el ejemplo,
@@ -1444,12 +1444,14 @@ leer_datos_fwf <- function(variables = character(),
 #'     las otras dos al atributo «precio».
 #' @param variables character: los nombres de las variables que se van
 #'     a leer del archivo
-#' @param varid character: nombre de la variable que identifica los
-#'     registros. Por default, "quest"
+#' @param idr numeric: nombre de la variable que identifica los
+#'     registros. Por omisión es 1.
 #' @param columnas character: nombres de los atributos en común que
 #'     serán las columnas del data.frame resultante
 #' @param tipo_col character: tipo de datos en las columnas
 #'     "variables"
+#' @param col_nom_fi character: columna con nombres de filas. Opcional
+#' @param nom_fi character: etiquetas de filas del cuadro. Opcional
 #' @param dic data.frame: data.frame con los datos del diccionario de
 #'     datos
 #' @param nomar character: nombre del archivo donde están todos los
@@ -1459,12 +1461,18 @@ leer_datos_fwf <- function(variables = character(),
 #' @examples
 #' \donttest{
 #' leer_cuadros_fwf(c("c001", "c002", "c003", "c004"),
-#'                  varid = "quest",
+#'                  idr = "quest",
 #'                  columnas = c("cultivo", "precio"),
 #'                  tipo_col = c("integer", "double"),
 #'                  dic = dicc, nomar = "arch.txt")}
-leer_cuadros_fwf <- function(variables, varid, columnas, tipo_col,
+leer_cuadros_fwf <- function(variables, idr = "quest", columnas, tipo_col,
+                             col_nom_fi = character(0),
+                             nom_fi = character(0),
                              dic, nomar) {
+
+    ## stopifnot("falta arg. nom_fila" = filled_char(col_nom_fi) &&
+    ##               !filled_char(nom_fi))
+
     nv <- length(variables)
     nc <- length(columnas)
     cg <- seq_len(nv) + 1L
@@ -1472,19 +1480,37 @@ leer_cuadros_fwf <- function(variables, varid, columnas, tipo_col,
     ng <- nv %/% nc
     ok <- (nc * ng) == nv
 
-    stopifnot("variables no múltiplo de columnas" = ok)
+    stopifnot("#variables no múltiplo de #columnas" = ok)
 
-    variables <- c(varid, variables)
+    if ( filled_char(nom_fi) ) {
+        stopifnot( "chk. arg. nom_fila" = length(nom_fi) == ng )
+    }
+
+    variables <- c(idr, variables)
     tipo_col <- c("integer", rep(tipo_col, ng))
 
-    x <- tryCatch(leer_datos_fwf(variables, variables, tipo_col,
-                                 dic, nomar),
+    x <- tryCatch(leer_datos_fwf(variables = variables,
+                                 columnas = variables,
+                                 tipo_col = tipo_col,
+                                 dic = dic, nomar = nomar),
                   error = function(e) print(variables))
 
-    names(x)[cg] <- rep(columnas, length.out = nv)
+    ## names(x)[cg] <- rep(columnas, length.out = nv)
+    ## y <- split(cg, rep(seq_len(ng), each = nc)) %>%
+    ##     purrr::map_df(function(r) x[, c(1, r)]) %>%
+    ##     purrr::list_rbind( )
 
-    split(cg, rep(seq_len(ng), each = nc)) %>%
-        purrr::map_dfr(function(r) x[, c(1, r)])
+    y <- normalizar_data(x, col_id = idr, vbl = variables)
+
+    ## el número de registros debe ser múltiplo
+    if ( filled_char(nom_fi) ) {
+        y[col_nom_fi] <- rep(nom_fi, length.out = nrow(y))
+    }
+
+    z <- purrr::map_df(y, na0) %>%
+        quitar_0(excepto = idr)
+
+    invisible(z)
 }
 
 #' Campo-CSpro
