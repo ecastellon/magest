@@ -1463,8 +1463,8 @@ leer_datos_fwf <- function(variables = character(),
 #'                  columnas = c("cultivo", "precio"),
 #'                  tipo_col = c("integer", "double"),
 #'                  dic = dicc, nomar = "arch.txt")}
-leer_cuadros_fwf <- function(variables, columnas, tipo_col,
-                             varid, dic, nomar) {
+leer_cuadros_fwf <- function(variables, varid, columnas, tipo_col,
+                             dic, nomar) {
     nv <- length(variables)
     nc <- length(columnas)
     cg <- seq_len(nv) + 1L
@@ -1480,7 +1480,6 @@ leer_cuadros_fwf <- function(variables, columnas, tipo_col,
     x <- tryCatch(leer_datos_fwf(variables, variables, tipo_col,
                                  dic, nomar),
                   error = function(e) print(variables))
-
 
     names(x)[cg] <- rep(columnas, length.out = nv)
 
