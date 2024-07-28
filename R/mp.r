@@ -1414,7 +1414,7 @@ exportar_datos_cs <- function(tab, dic,
 #' @param dic data.frame: los datos del diccionario de datos
 #' @param nomar character: nombre del archivo
 #' @seealso read.fwf, exportar_datos_cs
-#' @return data.frame
+#' @return invisible data.frame; NULL si error
 #' @export
 leer_datos_fwf <- function(variables = character(),
                            columnas = variables,
@@ -1422,10 +1422,15 @@ leer_datos_fwf <- function(variables = character(),
                            dic, nomar = character()) {
 
     loncam <- longitud_variables(variables, dic)
-    w <- read.fwf(nomar, widths = loncam, col.names = columnas,
-              colClasses = tipo_col,
-              comment.char = "", strip.white = TRUE,
-              na.strings = "", stringsAsFactors = FALSE)
+    w <- tryCatch(
+        read.fwf(nomar, widths = loncam, col.names = columnas,
+                 colClasses = tipo_col,
+                 comment.char = "", strip.white = TRUE,
+                 na.strings = "", stringsAsFactors = FALSE),
+        error = function(e) {
+            message("Error durante lectura !!!")
+            NULL
+            })
 
     invisible(w)
 }
@@ -1456,7 +1461,7 @@ leer_datos_fwf <- function(variables = character(),
 #'     datos
 #' @param nomar character: nombre del archivo donde están todos los
 #'     datos
-#' @return data.frame
+#' @return data.frame o NULL si error
 #' @export
 #' @examples
 #' \donttest{
@@ -1470,8 +1475,9 @@ leer_cuadros_fwf <- function(variables, idr = "quest", columnas, tipo_col,
                              nom_fi = character(0),
                              dic, nomar) {
 
-    ## stopifnot("falta arg. nom_fila" = filled_char(col_nom_fi) &&
-    ##               !filled_char(nom_fi))
+    stopifnot("falta arg. nom_fi" = (is_vacuo(col_nom_fi) &&
+                  is_vacuo(nom_fi)) || (filled_char(col_nom_fi) &&
+                  filled_char(nom_fi)))
 
     nv <- length(variables)
     nc <- length(columnas)
@@ -1487,28 +1493,36 @@ leer_cuadros_fwf <- function(variables, idr = "quest", columnas, tipo_col,
     }
 
     variables <- c(idr, variables)
-    tipo_col <- c("integer", rep(tipo_col, ng))
+    if (length(tipo_col) == 1) {
+        tipo_col <- rep(tipo_col, nv)
+    } else {
+        stopifnot("arg. tipo_col,variables" = length(tipo_col) == nv)
+    }
+    tipo_col <- c("integer", tipo_col)
 
-    x <- tryCatch(leer_datos_fwf(variables = variables,
+    x <- leer_datos_fwf(variables = variables,
                                  columnas = variables,
                                  tipo_col = tipo_col,
-                                 dic = dic, nomar = nomar),
-                  error = function(e) print(variables))
+                                 dic = dic, nomar = nomar)
 
     ## names(x)[cg] <- rep(columnas, length.out = nv)
     ## y <- split(cg, rep(seq_len(ng), each = nc)) %>%
     ##     purrr::map_df(function(r) x[, c(1, r)]) %>%
     ##     purrr::list_rbind( )
 
-    y <- normalizar_data(x, col_id = idr, vbl = variables)
+    if (!is.null(x)) {
+        z <- NULL
+    } else {
+        y <- normalizar_data(x, col_id = idr, vbl = variables)
 
-    ## el número de registros debe ser múltiplo
-    if ( filled_char(nom_fi) ) {
-        y[col_nom_fi] <- rep(nom_fi, length.out = nrow(y))
+        ## el número de registros debe ser múltiplo
+        if ( filled_char(nom_fi) ) {
+            y[col_nom_fi] <- rep(nom_fi, length.out = nrow(y))
+        }
+
+        z <- purrr::map_df(y, na0) %>%
+            quitar_0(excepto = idr)
     }
-
-    z <- purrr::map_df(y, na0) %>%
-        quitar_0(excepto = idr)
 
     invisible(z)
 }

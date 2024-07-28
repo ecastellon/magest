@@ -148,11 +148,12 @@ normalizar_data <- function(df, col_id, vbl) UseMethod("normalizar_data")
 #'     10510       2        6
 #'
 #'     En la librería ya existe una función que devuelve la expresión
-#'     SQL que produce una tabla normalizada cuando se leen los
-#'     datos: «xsql_t»
+#'     SQL que produce una tabla normalizada cuando se leen los datos:
+#'     «xsql_t»
 #' @seealso xsql_t
 #' @param df data.frame
-#' @param col_id numeric: columna con el índice (id) de los datos
+#' @param col_id numeric o character: columna con el índice (id) de
+#'     los datos
 #' @param vbl character: nombre de las variables del data.frame
 #'     resultado
 #' @return data.frame
@@ -165,20 +166,40 @@ normalizar_data.data.frame <- function(df, col_id, vbl = character()) {
 
     nm <- names(df)
 
-    y <- tidyr::pivot_longer(df, nm[-col_id], names_to = "vb",
-                             values_to = "y")
+    nom_id <- NULL
+    if (is.numeric(col_id)) {
+        if ( col_id > 0 && col_id <= length(nm) ) {
+            nom_id <- nm[col_id]
+        }
+    } else {
+        if ( filled_char(col_id) ) {
+            nn <- grep(col_id, nm)
+            if (filled(nn)) {
+                nom_id <- col_id
+                col_id <- nn
+            }
+        }
+    }
 
-    ng <- (length(nm) - 1L) %/% length(vbl)
+    if (is.null(nom_id)) {
+        warning("error .. arg. col_id")
+    } else {
+        y <- tidyr::pivot_longer(df, nm[-col_id], names_to = "vb",
+                                 values_to = "y")
 
-    y["vb"] <- rep(vbl, ng * nrow(df))
-    y["id"] <- rep(seq_len(nrow(df) * ng), each = ng)
+        ng <- (length(nm) - 1L) %/% length(vbl)
 
-    z <- tidyr::pivot_wider(y, id_cols = "id", names_from = "vb",
-                            values_from = "y")
+        y["vb"] <- rep(vbl, ng * nrow(df))
+        y["id"] <- rep(seq_len(nrow(df) * ng), each = ng)
 
-    z[nm[col_id]] <- rep(df[[col_id]], each = ng)
+        nn <- rep(df[[nom_id]], each = ng)
 
-    z
+        df <- tidyr::pivot_wider(y, id_cols = "id", names_from = "vb",
+                                values_from = "y")
+        df[[nom_id]] <- nn
+    }
+
+    invisible(df)
 }
 
 ## --- strings ---
