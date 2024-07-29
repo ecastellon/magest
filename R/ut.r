@@ -187,16 +187,18 @@ normalizar_data.data.frame <- function(df, col_id, vbl = character()) {
         y <- tidyr::pivot_longer(df, nm[-col_id], names_to = "vb",
                                  values_to = "y")
 
-        ng <- (length(nm) - 1L) %/% length(vbl)
+        nvb <- length(vbl)
+        ng <- (length(nm) - 1L) %/% nvb
 
         y["vb"] <- rep(vbl, ng * nrow(df))
-        y["id"] <- rep(seq_len(nrow(df) * ng), each = ng)
+        y["id"] <- rep(seq_len(nrow(df) * ng), each = nvb)
 
         nn <- rep(df[[nom_id]], each = ng)
 
         df <- tidyr::pivot_wider(y, id_cols = "id", names_from = "vb",
                                 values_from = "y")
         df[[nom_id]] <- nn
+        df[["id"]] <- NULL
     }
 
     invisible(df)

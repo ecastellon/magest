@@ -1366,7 +1366,7 @@ exportar_datos_cs <- function(tab, dic,
 
     del <- leer_campo_cspro(tab, "deleted", conn = cn) %>%
         extract2(1) %>%
-        equals(1L)
+        magrittr::equals(1L) #una igual en testthat
 
     txt <- leer_campo_cspro(tab, "questionnaire", conn = cn) %>%
         filter(deleted == 0) %>%
@@ -1447,14 +1447,14 @@ leer_datos_fwf <- function(variables = character(),
 #'     (atributos en común) del data.frame resultante. En el ejemplo,
 #'     las variables «c001» y «c003» refieren al atributo «cultivo», y
 #'     las otras dos al atributo «precio».
+#' @param idr numeric o character: nombre o número de la variable que
+#'     identifica los registros. Por omisión es 1.
 #' @param variables character: los nombres de las variables que se van
 #'     a leer del archivo
-#' @param idr numeric: nombre de la variable que identifica los
-#'     registros. Por omisión es 1.
-#' @param columnas character: nombres de los atributos en común que
-#'     serán las columnas del data.frame resultante
 #' @param tipo_col character: tipo de datos en las columnas
 #'     "variables"
+#' @param columnas character: nombres de los atributos en común que
+#'     serán las columnas del data.frame resultante
 #' @param col_nom_fi character: columna con nombres de filas. Opcional
 #' @param nom_fi character: etiquetas de filas del cuadro. Opcional
 #' @param dic data.frame: data.frame con los datos del diccionario de
@@ -1465,12 +1465,11 @@ leer_datos_fwf <- function(variables = character(),
 #' @export
 #' @examples
 #' \donttest{
-#' leer_cuadros_fwf(c("c001", "c002", "c003", "c004"),
-#'                  idr = "quest",
-#'                  columnas = c("cultivo", "precio"),
+#' leer_cuadros_fwf(idr = "quest", c("c001", "c002", "c003", "c004"),
 #'                  tipo_col = c("integer", "double"),
+#'                  columnas = c("cultivo", "precio"),
 #'                  dic = dicc, nomar = "arch.txt")}
-leer_cuadros_fwf <- function(variables, idr = "quest", columnas, tipo_col,
+leer_cuadros_fwf <- function(idr = 1L, variables, tipo_col, columnas,
                              col_nom_fi = character(0),
                              nom_fi = character(0),
                              dic, nomar) {
@@ -1494,26 +1493,24 @@ leer_cuadros_fwf <- function(variables, idr = "quest", columnas, tipo_col,
 
     variables <- c(idr, variables)
     if (length(tipo_col) == 1) {
-        tipo_col <- rep(tipo_col, nv)
-    } else {
-        stopifnot("arg. tipo_col,variables" = length(tipo_col) == nv)
+        tipo_col <- rep(tipo_col, nv + 1L)
     }
-    tipo_col <- c("integer", tipo_col)
+    stopifnot("arg. tipo_col,variables" = length(tipo_col) == nv + 1L)
 
     x <- leer_datos_fwf(variables = variables,
-                                 columnas = variables,
-                                 tipo_col = tipo_col,
-                                 dic = dic, nomar = nomar)
+                        columnas = variables,
+                        tipo_col = tipo_col,
+                        dic = dic, nomar = nomar)
 
     ## names(x)[cg] <- rep(columnas, length.out = nv)
     ## y <- split(cg, rep(seq_len(ng), each = nc)) %>%
     ##     purrr::map_df(function(r) x[, c(1, r)]) %>%
     ##     purrr::list_rbind( )
 
-    if (!is.null(x)) {
+    if (is.null(x)) {
         z <- NULL
     } else {
-        y <- normalizar_data(x, col_id = idr, vbl = variables)
+        y <- normalizar_data(x, col_id = idr, vbl = columnas)
 
         ## el número de registros debe ser múltiplo
         if ( filled_char(nom_fi) ) {
