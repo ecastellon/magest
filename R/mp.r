@@ -1488,7 +1488,7 @@ leer_cuadros_fwf <- function(idr = 1L, variables, tipo_col, columnas,
     stopifnot("#variables no múltiplo de #columnas" = ok)
 
     if ( filled_char(nom_fi) ) {
-        stopifnot( "chk. arg. nom_fila" = length(nom_fi) == ng )
+        stopifnot( "chk. arg. nom_fi" = length(nom_fi) == ng )
     }
 
     variables <- c(idr, variables)
