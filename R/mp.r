@@ -560,7 +560,7 @@ db_drop.RODBC <- function(x, tb = character()) {
 #'     existe, se agrega al libro excel. Si no se pasa un nombre, se
 #'     agrega una nueva de nombre "Hojaxx", donde "xx" son números.
 #' @param sobre_hoja logical: indicar que acepta escribir en una hoja
-#'     que ya existe. FALSE por omisión.
+#'     que ya existe. TRUE por omisión.
 #' @param columna integer: número de la columna de la celda superior
 #'     izquierda de la tabla donde se guardarán los datos
 #' @param fila integer: número de la fila
@@ -569,7 +569,7 @@ db_drop.RODBC <- function(x, tb = character()) {
 #'     cuando se escribieron los datos?. TRUE por omisión
 #' @return nada
 #' @export
-guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = FALSE,
+guardar_excel <- function(x, archivo, hoja = "", sobre_hoja = TRUE,
                           fila = 1L, columna = 1L, titulo = character(0),
                           el_dia = TRUE) {
     ## verificar que sea hoja válida
@@ -769,7 +769,7 @@ xsql_s <- function(x = character(), cam = "*") {
     stopifnot("arg. inadmisibles" = is_scalar_name(x) &&
                   filled_char(cam))
 
-    if (cam != "*") {
+    if ((!is_scalar(cam)) || (cam != "*")) {
         nm <- names(cam)
         if (filled(nm)) {
             cam <- paste(cam, nm, sep = " as ")
