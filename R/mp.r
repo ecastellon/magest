@@ -769,7 +769,7 @@ xsql_s <- function(x = character(), cam = "*") {
     stopifnot("arg. inadmisibles" = is_scalar_name(x) &&
                   filled_char(cam))
 
-    if ((!is_scalar(cam)) || (cam != "*")) {
+    if ((!is_scalar(cam)) || (cam[1] != "*")) {
         nm <- names(cam)
         if (filled(nm)) {
             cam <- paste(cam, nm, sep = " as ")
