@@ -847,7 +847,10 @@ duplicar_v <- function(x, qst, dup) {
 #'     data.frame). El parámetro «origen» es para pasar el nombre de
 #'     la variable con los números de boleta origen y evitar que se
 #'     modifique. Es importante tener cuidado con el nombre pasado
-#'     como argumento.
+#'     como argumento. El número de cuestionario que recibirá los
+#'     datos («la copia») debe estar registrado en "df", de modo que
+#'     el número de filas (nrow(df)) debe ser igual al número de
+#'     elementos en el argumento del parámetro "dup".
 #' @param qst numeric: la columna que identifica los registros; por
 #'     defecto, 1
 #' @param origen character: nombre de la variable con número de boleta
